@@ -1229,4 +1229,14 @@ config TOUCHSCREEN_ROHM_BU21023
 
 source "drivers/input/touchscreen/focaltech_touch/Kconfig"
 
+config TOUCHSCREEN_DWAV_USB_MT
+	tristate "D-WAV Scientific USB MultiTouch"
+	depends on USB_ARCH_HAS_HCD
+	select USB
+	help
+	  Say Y here if you have a D-WAV Scientific USB(HID) based MultiTouch
+	  controller.
+
+	  module will be called dwav-usb-mt.
+
 endif
