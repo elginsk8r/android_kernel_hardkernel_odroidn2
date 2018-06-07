@@ -142,6 +142,7 @@ dtb-y += txl_t960_p346.dtb
 dtb-y += txl_t962_p320.dtb
 dtb-y += txl_t962_p321.dtb
 dtb-y += txl_t962_p321_720p.dtb
+dtb-y += s905d2_odroidc3.dtb
 
 always		:= $(dtb-y) $(dtbo-y)
 subdir-y	:= $(dts-dirs)
