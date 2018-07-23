@@ -236,4 +236,9 @@ config ARCH_MESON64_ODROIDC3
 	  This enables support for the board ODROID-C3 of Hardkernel
 	  which is based on ARMv8 SoC of AMLogic, Inc.
 
+config ARCH_MESON64_ODROIDN2
+	bool "Hardkkernel's ODROID-N2 Single Board Computer"
+	help
+	  This enables support for the board ODROID-N2 of Hardkernel
+	  which is based on ARMv8 SoC of AMLogic, Inc.
 endmenu

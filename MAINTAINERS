@@ -15218,3 +15218,8 @@ F: include/linux/amlogic/media/video_sink/v4lvideo_ext.h
 AMLOGIC POWER DOMAIN DRIVER
 M:	Zhiqiang Liang <zhiqiang.liang@amlogic.com>
 F: 	drivers/amlogic/power/power_domain.c
+
+HARDKERNEL S922D odroidn2
+M: 	Joy Cho <joy.cho@hardkernel.com>
+F:	arch/arm64/configs/odroidn2_defconfig
+F:      arch/arm64/boot/dts/amlogic/s922d_odroidn2.dts
