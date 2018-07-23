@@ -15419,3 +15419,8 @@ AMLOGIC SC2 s905x4 DTS
 M: Luan Yuan <Luan.Yuan@amlogic.com>
 F: arch/arm/boot/dts/amlogic/sc2_s905x4_ah212_mxl258c.dts
 F: arch/arm64/boot/dts/amlogic/sc2_s905x4_ah212_mxl258c.dts
+
+HARDKERNEL S922D odroidn2
+M: 	Joy Cho <joy.cho@hardkernel.com>
+F:	arch/arm64/configs/odroidn2_defconfig
+F:      arch/arm64/boot/dts/amlogic/s922d_odroidn2.dts
