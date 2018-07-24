@@ -589,7 +589,7 @@ static int amlogic_new_usb3_v2_probe(struct platform_device *pdev)
 	u32 u3_hhi_mem_pd_shift = 0;
 	u32 u3_hhi_mem_pd_mask = 0;
 	u32 u3_ctrl_iso_shift = 0;
-#if defined(CONFIG_ARCH_MESON64_ODROIDC3)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
 	struct gpio_desc *huben_gd = NULL;
 	struct gpio_desc *hubrst_gd = NULL;
 #endif
@@ -603,7 +603,7 @@ static int amlogic_new_usb3_v2_probe(struct platform_device *pdev)
 			return -1;
 	}
 
-#if defined(CONFIG_ARCH_MESON64_ODROIDC3)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
 	gpio_name = of_get_property(dev->of_node, "hub-en", NULL);
 	if (gpio_name) {
 		huben_gd = gpiod_get_index(&pdev->dev,
