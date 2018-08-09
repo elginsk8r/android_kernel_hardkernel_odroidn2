@@ -142,10 +142,10 @@ dtb-y += txl_t960_p346.dtb
 dtb-y += txl_t962_p320.dtb
 dtb-y += txl_t962_p321.dtb
 dtb-y += txl_t962_p321_720p.dtb
-dtb-y += s905d2_odroidc3.dtb
-dtb-y += s905d2_odroidc3_android.dtb
-dtb-y += s922d_odroidn2.dtb
-dtb-y += s922d_odroidn2_android.dtb
+dtb-$(CONFIG_ARCH_MESON64_ODROIDC3) += s905d2_odroidc3.dtb
+dtb-$(CONFIG_ARCH_MESON64_ODROIDC3) += s905d2_odroidc3_android.dtb
+dtb-$(CONFIG_ARCH_MESON64_ODROIDN2) += s922d_odroidn2.dtb
+dtb-$(CONFIG_ARCH_MESON64_ODROIDN2) += s922d_odroidn2_android.dtb
 
 always		:= $(dtb-y) $(dtbo-y)
 subdir-y	:= $(dts-dirs)
