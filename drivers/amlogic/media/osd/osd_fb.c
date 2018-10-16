@@ -4873,7 +4873,7 @@ static int __init nativeui_setup(char *str)
 }
 
 __setup("nativeui=", nativeui_setup);
-subsys_initcall(osd_init_module);
+module_init(osd_init_module);
 module_exit(osd_exit_module);
 
 MODULE_AUTHOR("Platform-BJ <platform.bj@amlogic.com>");
