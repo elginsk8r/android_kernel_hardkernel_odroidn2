@@ -231,6 +231,11 @@
 			size = <16>;
 		};
 	};//End efusekey
+
+	odroid_sysfs: odroid_sysfs {
+		compatible = "odroid-sysfs";
+		status = "disabled";
+	};
 };
 
 &ethmac {

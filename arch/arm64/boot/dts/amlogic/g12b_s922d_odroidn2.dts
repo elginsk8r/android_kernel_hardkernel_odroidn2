@@ -477,3 +477,7 @@
 &saradc {
 	status = "okay";
 };
+
+&odroid_sysfs {
+	status = "okay";
+};
