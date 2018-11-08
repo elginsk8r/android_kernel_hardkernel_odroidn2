@@ -178,3 +178,4 @@ obj-$(CONFIG_FPGA)		+= fpga/
 obj-$(CONFIG_TEE)		+= tee/
 obj-$(CONFIG_AMLOGIC_DRIVER) 	+= amlogic/
 obj-$(CONFIG_GOOGLE_DRIVER)	+= google/
+obj-$(CONFIG_ODROIDN2_SYSFS)	+= hardkernel/
