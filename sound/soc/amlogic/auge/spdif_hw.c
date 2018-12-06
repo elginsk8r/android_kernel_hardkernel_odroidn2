@@ -663,8 +663,15 @@ void spdifout_play_with_zerodata(unsigned int spdif_id, bool reenable)
 
 		/* spdif clk */
 		//spdifout_clk_ctrl(spdif_id, true);
+
 		/* spdif to hdmitx */
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+		if (spdif_id == 1) {
+#endif
 		spdifout_to_hdmitx_ctrl(spdif_id);
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+		}
+#endif
 
 		/* spdif ctrl */
 		spdifout_fifo_ctrl(spdif_id,
