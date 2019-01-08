@@ -219,6 +219,12 @@
 		compatible = "odroid-sysfs";
 		status = "disabled";
 	};
+
+	onewire:onewire {
+		compatible = "w1-gpio";
+		gpios = <&gpio GPIOA_13 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
 };
 
 &ethmac {
