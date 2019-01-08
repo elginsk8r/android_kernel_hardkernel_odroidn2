@@ -6269,6 +6269,17 @@ static int amhdmitx_get_dt_info(struct platform_device *pdev)
 			&dongle_mode);
 		hdmitx_device.dongle_mode = !!dongle_mode;
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+		/* Get audio source information */
+		ret = of_property_read_u32(pdev->dev.of_node, "tx_aud_src",
+			&(hdmitx_device.tx_aud_src));
+		if (ret) {
+			pr_info(SYS "not find tx_aud_src\n");
+			hdmitx_device.tx_aud_src = 0;
+		}
+		pr_info(SYS "hdmitx_device.tx_aud_src : %d\n",
+			hdmitx_device.tx_aud_src);
+#endif
 		ret = of_property_read_u32(pdev->dev.of_node,
 			"repeater_tx", &val);
 		if (!ret)
