@@ -2657,6 +2657,7 @@ static struct dispmode_vic dispmode_vic_tab[] = {
 	{"3440x1440p60hz", HDMIV_3440x1440p60hz},
 	{"480x320p60hz", HDMIV_480x320p60hz},
 	{"1280x480p60hz", HDMIV_1280x480p60hz},
+	{"custombuilt", HDMI_CUSTOMBUILT},
 };
 
 int hdmitx_edid_VIC_support(enum hdmi_vic vic)
