@@ -1374,8 +1374,11 @@ static struct hdmi_format_para fmt_para_custombuilt = {
 		.aspect_ratio_num = 16,
 		.aspect_ratio_den = 9,
 		.sync_duration_den = 1,
-		.viu_color_fmt = COLOR_FMT_YUV444,
-		.viu_mux = VIU_MUX_ENCP,
+		.video_clk         = 268500000,
+		.htotal            = 2720,
+		.vtotal            = 1646,
+		.viu_color_fmt     = COLOR_FMT_YUV444,
+		.viu_mux           = VIU_MUX_ENCP,
 	},
 };
 
