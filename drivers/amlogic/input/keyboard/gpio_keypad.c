@@ -19,6 +19,7 @@
 #include <linux/input.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
+#include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/interrupt.h>
 #include <linux/slab.h>
@@ -32,6 +33,9 @@
 #define DEFAULT_SCAN_PERION	20
 #define	DEFAULT_POLL_MODE	0
 #define KEY_JITTER_COUNT	1
+
+#define AO_DEBUG_REG0		((0x28 << 2))
+static unsigned long gpiopower;
 
 struct pin_desc {
 	int current_status;
@@ -70,6 +74,23 @@ void send_power_key(int state)
 }
 
 EXPORT_SYMBOL(send_power_key);
+
+static int __init gpiopower_setup(char *str)
+{
+	int ret;
+
+	if (str == NULL) {
+		gpiopower = 0;
+		return -EINVAL;
+	}
+
+	ret = kstrtoul(str, 0, &gpiopower);
+
+	pr_info("%s gpiopower : %ld\n", __func__, gpiopower);
+
+	return 0;
+}
+__setup("gpiopower=", gpiopower_setup);
 
 static irqreturn_t gpio_irq_handler(int irq, void *data)
 {
@@ -172,7 +193,10 @@ static int meson_gpio_kp_probe(struct platform_device *pdev)
 	int ret, i;
 	struct input_dev *input_dev;
 	struct gpio_keypad *keypad;
+	struct resource *res;
 	bool pwrkey_update_flg = false;
+	int val, err;
+	void __iomem *ao_reg;
 
 	if (!(pdev->dev.of_node)) {
 		dev_err(&pdev->dev,
@@ -204,11 +228,47 @@ static int meson_gpio_kp_probe(struct platform_device *pdev)
 		(keypad->key_size)*sizeof(*(keypad->key)), GFP_KERNEL);
 	if (!(keypad->key))
 		return -EINVAL;
+	if (gpiopower) {
+		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+		if (res) {
+			ao_reg = ioremap(res->start, res->end - res->start);
+		} else {
+			dev_info(&pdev->dev, "Failed to get AO reg\n");
+			ao_reg = NULL;
+		}
+	}
 	for (i = 0; i < keypad->key_size; i++) {
-		//get all gpio desc.
-		desc = devm_gpiod_get_index(&pdev->dev, "key", i, GPIOD_IN);
-		if (IS_ERR_OR_NULL(desc))
-			return -EINVAL;
+		if (gpiopower) {
+			if (gpio_is_valid(gpiopower)) {
+				err = devm_gpio_request_one(&pdev->dev,
+					gpiopower, GPIOF_IN, "gpio_keys");
+				if (err < 0) {
+					dev_err(&pdev->dev, "Failed to request GPIO %ld, error %d\n",
+						gpiopower, err);
+					return -EINVAL;
+				}
+				desc = gpio_to_desc(gpiopower);
+				if (!desc) {
+					dev_err(&pdev->dev, "Failed to get desc\n");
+					return -EINVAL;
+				}
+
+				if (ao_reg) {
+					val = readl((ao_reg + AO_DEBUG_REG0));
+					val |= (gpiopower << 16);
+					writel(val, (ao_reg + AO_DEBUG_REG0));
+				}
+			} else {
+				dev_err(&pdev->dev, "invalid gpio %ld\n",
+						gpiopower);
+				return -EINVAL;
+			}
+		} else {
+			//get all gpio desc.
+			desc = devm_gpiod_get_index(&pdev->dev, "key", i, GPIOD_IN);
+			if (IS_ERR_OR_NULL(desc))
+				return -EINVAL;
+		}
 		keypad->key[i].desc = desc;
 		//The gpio default is high level.
 		keypad->key[i].current_status = 1;
