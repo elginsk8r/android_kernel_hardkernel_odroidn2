@@ -739,6 +739,12 @@ static const struct snd_kcontrol_new card_controls[] = {
 			    spk_mute_set),
 };
 
+static const struct snd_kcontrol_new line_mute_controls[] = {
+	SOC_SINGLE_BOOL_EXT("LINE_OUT mute", 0,
+			    spk_mute_get,
+			    spk_mute_set),
+};
+
 static int aml_card_parse_gpios(struct device_node *node,
 					   struct aml_card_data *priv)
 {
@@ -748,8 +754,9 @@ static int aml_card_parse_gpios(struct device_node *node,
 	int gpio;
 	bool active_low;
 	int ret;
+	bool line_mute;
 
-	gpio = of_get_named_gpio_flags(node, "spk_mute-gpios", 0, &flags);
+	gpio = of_get_named_gpio_flags(node, "mute_gpio", 0, &flags);
 	priv->spk_mute_gpio = gpio;
 
 	if (gpio_is_valid(gpio)) {
@@ -757,27 +764,36 @@ static int aml_card_parse_gpios(struct device_node *node,
 		flags = active_low ? GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW;
 		priv->spk_mute_active_low = active_low;
 
-		ret = devm_gpio_request_one(dev, gpio, flags, "spk_mute");
-		if (ret >= 0) {
-			snd_soc_add_card_controls(soc_card, card_controls,
-					ARRAY_SIZE(card_controls));
+		ret = devm_gpio_request_one(dev, gpio, flags, "line_mute");
+		line_mute = ret >= 0;
+		if (line_mute) {
+			snd_soc_add_card_controls(soc_card, line_mute_controls,
+					ARRAY_SIZE(line_mute_controls));
 		}
 	}
-	if (IS_ERR_OR_NULL(priv->avout_mute_desc)) {
+
+	if (!line_mute) {
+		gpio = of_get_named_gpio_flags(node, "spk_mute", 0, &flags);
+		priv->spk_mute_gpio = gpio;
+
+		if (gpio_is_valid(gpio)) {
+			active_low = !!(flags & OF_GPIO_ACTIVE_LOW);
+			flags = active_low ? GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW;
+			priv->spk_mute_active_low = active_low;
+
+			ret = devm_gpio_request_one(dev, gpio, flags, "spk_mute");
+			if (ret >= 0) {
+				snd_soc_add_card_controls(soc_card, card_controls,
+						ARRAY_SIZE(card_controls));
+			}
+		}
+
 		priv->avout_mute_desc = gpiod_get(dev,
 					"avout_mute", GPIOF_OUT_INIT_LOW);
-	}
-	if (!IS_ERR(priv->avout_mute_desc)) {
-		if (!priv->av_mute_enable) {
+		if (!IS_ERR(priv->avout_mute_desc)) {
 			msleep(500);
 			gpiod_direction_output(priv->avout_mute_desc,
 				GPIOF_OUT_INIT_HIGH);
-			pr_info("av out status: %s\n",
-				gpiod_get_value(priv->avout_mute_desc) ?
-				"high" : "low");
-		} else {
-			gpiod_direction_output(priv->avout_mute_desc,
-				GPIOF_OUT_INIT_LOW);
 			pr_info("av out status: %s\n",
 				gpiod_get_value(priv->avout_mute_desc) ?
 				"high" : "low");
