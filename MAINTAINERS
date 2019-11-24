@@ -13544,6 +13544,11 @@ AMLOGIC boot config for M8B
 M: Tao Zeng <tao.zeng@amlogic.com>
 F: arch/arm/mach-meson/Makefile.boot
 
+AMLOGIC implementation for 32bit kasan
+M: Tao Zeng <tao.zeng@amlogic.com>
+F: arch/arm/include/asm/kasan.h
+F: arch/arm/mm/kasan_init.c
+
 HDMITX OUTPUT DRIVER
 M:	Yi Zhou <yi.zhou@amlogic.com>
 M:      Zongdong Jiao <zongdong.jiao@amlogic.com>
@@ -13925,6 +13930,7 @@ F:	drivers/amlogic/media/enhancement/amvecm/arch/*
 F:	drivers/amlogic/media/enhancement/amvecm/dnlp_algorithm/*
 F:	include/linux/amlogic/media/amvecm/*
 F:	drivers/amlogic/media/enhancement/amvecm/hdr/*
+F:      drivers/amlogic/media/enhancement/amvecm/amprime_sl/*
 
 AMLOGIC GXL ADD SKT DTS
 M: Yun Cai <yun.cai@amlogic.com>
@@ -14441,6 +14447,11 @@ M:	Zhilei Wu <zhilei.wu@amlogic.com>
 F:	drivers/amlogic/media/enhancement/amdolby_vision*
 F:	include/linux/amlogic/media/amdolbyvision/*
 
+AMLOGIC HDR PRIMSE SL DRIVER
+M:      Yi Zhou <yi.zhou@amlogic.com>
+F:      drivers/amlogic/media/enhancement/amprime_sl/*
+F:      include/linux/amlogic/media/amprime_sl/*
+
 AMLOGIC G12A Media codec io bus
 M:	Nanxin Qin <nanxin.qin@amlogic.com>
 F:	include/linux/amlogic/media/registers/regs/efuse_regs.h
@@ -14506,6 +14517,8 @@ F:      drivers/amlogic/media/dtv_demod/*
 AMLOGIC DTV DEMOD DRIVER
 M:      Zhiwei Yuan <zhiwei.yuan@amlogic.com>
 F:      drivers/amlogic/media/dtv_demod/include/addr_atsc*.h
+F:      drivers/amlogic/media/dtv_demod/include/demod_dbg.h
+F:      drivers/amlogic/media/dtv_demod/demod_dbg.c
 
 AMLOGIC DEFENDKEY DRIVER
 M:	Zhongfu Luo <zhongfu.luo@amlogic.com>
@@ -14556,6 +14569,13 @@ AMLOGIC G12B skt/w400 dts
 M: Qiufang Dai <qiufang.dai@amlogic.com>
 F: arch/arm64/boot/dts/amlogic/g12b_a311d_skt.dts
 F: arch/arm64/boot/dts/amlogic/g12b_a311d_w400.dts
+
+AMLOGIC G12B w200 dts
+M: Qiufang Dai <qiufang.dai@amlogic.com>
+F: arch/arm/boot/dts/amlogic/g12b_a311d_w200_a.dts
+F: arch/arm/boot/dts/amlogic/g12b_a311d_w200.dts
+F: arch/arm64/boot/dts/amlogic/g12b_a311d_w200_a.dts
+F: arch/arm64/boot/dts/amlogic/g12b_a311d_w200.dts
 
 AMLOGIC G12B clock
 M: Qiufang Dai <qiufang.dai@amlogic.com>

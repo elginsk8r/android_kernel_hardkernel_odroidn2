@@ -172,17 +172,17 @@
 
 	gpioleds {
 		compatible = "gpio-leds";
-		status = "okay";
+		status = "disabled";
 
 		net_red {
 			label="net_red";
-			gpios=<&gpio GPIOA_14 GPIO_ACTIVE_LOW>;
+			/*gpios=<&gpio GPIOA_14 GPIO_ACTIVE_LOW>;*/
 			default-state ="on";
 		};
 
 		net_green {
 			label="net_green";
-			gpios=<&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;
+			/*gpios=<&gpio GPIOA_15 GPIO_ACTIVE_HIGH>;*/
 			default-state ="on";
 		};
 
@@ -333,43 +333,43 @@
 		dev_name = "ionvideo";
 		status = "okay";
 	};
-	/*dvb {
-	 *	compatible = "amlogic, dvb";
-	 *	dev_name = "dvb";
-	 *
-	 *	fe0_mode = "external";
-	 *	fe0_demod = "Atbm8881";
-	 *	fe0_i2c_adap_id = <&i2c2>;
-	 *	fe0_demod_i2c_addr = <0xc0>;
-	 *	fe0_ts = <1>;
-	 *	fe0_reset_value = <0>;
-	 *	fe0_reset_gpio = <&gpio GPIOZ_1 GPIO_ACTIVE_HIGH>;
-	 *
-	 *	ts1 = "parallel";
-	 *	ts1_control = <0>;
-	 *	ts1_invert = <0>;
-	 *	interrupts = <0 23 1
-	 *	0 5 1
-	 *	0 21 1
-	 *	0 19 1
-	 *	0 25 1
-	 *	0 18 1
-	 *	0 24 1>;
-	 *	interrupt-names = "demux0_irq",
-	 *	"demux1_irq",
-	 *	"demux2_irq",
-	 *	"dvr0_irq",
-	 *	"dvr1_irq",
-	 *	"dvrfill0_fill",
-	 *	"dvrfill1_flush";
-	 *	pinctrl-names = "p_ts1";
-	 *	pinctrl-0 = <&dvb_p_ts1_pins>;
-	 *	clocks = <&clkc CLKID_DEMUX
-	 *	&clkc CLKID_AHB_ARB0
-	 *	&clkc CLKID_DOS_PARSER>;
-	 *	clock-names = "demux", "ahbarb0", "parser_top";
-	 *};
-	 */
+	dvb {
+		compatible = "amlogic, dvb";
+		dev_name = "dvb";
+		fe0_mode = "external";
+		fe0_demod = "Avl6762";
+		fe0_i2c_adap_id = <&i2c3>;
+		fe0_demod_i2c_addr = <0x14>;
+		fe0_ts = <0>;
+		fe0_reset_value = <0>;
+		fe0_reset_gpio = <&gpio GPIOZ_10 GPIO_ACTIVE_HIGH>;
+		dtv_demod0_ant_poweron_value = <0>;
+
+		ts0 = "serial";
+		ts0_control = <0x800>;
+		ts0_invert = <0>;
+		interrupts = <0 23 1
+		0 5 1
+		0 21 1
+		0 19 1
+		0 25 1
+		0 18 1
+		0 24 1>;
+		interrupt-names = "demux0_irq",
+		"demux1_irq",
+		"demux2_irq",
+		"dvr0_irq",
+		"dvr1_irq",
+		"dvrfill0_fill",
+		"dvrfill1_flush";
+		pinctrl-names = "s_ts0";
+		pinctrl-0 = <&dvb_s_ts0_pins>;
+		clocks = <&clkc CLKID_DEMUX
+		&clkc CLKID_AHB_ARB0
+		&clkc CLKID_DOS_PARSER>;
+		clock-names = "demux", "ahbarb0", "parser_top";
+	};
+
 	unifykey{
 		compatible = "amlogic, unifykey";
 		status = "ok";
@@ -775,7 +775,7 @@
 			cooling_devices {
 				cpufreq_cool_cluster0 {
 					min_state = <1000000>;
-					dyn_coeff = <115>;
+					dyn_coeff = <125>;
 					cluster_id = <0>;
 					node_name = "cpufreq_cool0";
 					device_type = "cpufreq";
@@ -789,7 +789,7 @@
 				};
 				gpufreq_cool {
 					min_state = <400>;
-					dyn_coeff = <358>;
+					dyn_coeff = <215>;
 					gpu_pp = <2>;
 					cluster_id = <0>;
 					node_name = "gpufreq_cool0";
@@ -822,7 +822,7 @@
 		soc_thermal: soc_thermal {
 			polling-delay = <1000>;
 			polling-delay-passive = <100>;
-			sustainable-power = <1460>;
+			sustainable-power = <1410>;
 			thermal-sensors = <&p_tsensor 0>;
 			trips {
 				pswitch_on: trip-point@0 {
@@ -873,7 +873,7 @@
 		ddr_thermal: ddr_thermal {
 			polling-delay = <2000>;
 			polling-delay-passive = <1000>;
-			sustainable-power = <1460>;
+			sustainable-power = <1410>;
 			thermal-sensors = <&d_tsensor 1>;
 			trips {
 				dswitch_on: trip-point@0 {
@@ -935,7 +935,7 @@
 			opp-microvolt = <790000>;
 		};
 		opp07 {
-			opp-hz = /bits/ 64 <1512000000>;
+			opp-hz = /bits/ 64 <1500000000>;
 			opp-microvolt = <800000>;
 		};
 		opp08 {
@@ -964,6 +964,45 @@
 	};
 
 }; /* end of / */
+
+&vddcpu0 {
+	pwms = <&pwm_AO_cd MESON_PWM_1 1250 0>;
+	regulator-min-microvolt = <720000>;
+	regulator-max-microvolt = <1020000>;
+	max-duty-cycle = <1250>;
+	/* Voltage Duty-Cycle */
+	voltage-table = <1020000 0>,
+		<1010000 3>,
+		<1000000 6>,
+		<990000 10>,
+		<980000 13>,
+		<970000 16>,
+		<960000 20>,
+		<950000 23>,
+		<940000 26>,
+		<930000 30>,
+		<920000 33>,
+		<910000 36>,
+		<900000 40>,
+		<890000 43>,
+		<880000 46>,
+		<870000 50>,
+		<860000 53>,
+		<850000 56>,
+		<840000 60>,
+		<830000 63>,
+		<820000 67>,
+		<810000 70>,
+		<800000 73>,
+		<790000 76>,
+		<780000 80>,
+		<770000 83>,
+		<760000 86>,
+		<750000 90>,
+		<740000 93>,
+		<730000 96>,
+		<720000 100>;
+};
 
 &meson_fb {
 	status = "okay";
@@ -1004,15 +1043,16 @@
 	};
 };
 
-&i2c2 {
-	status = "disabled";
-	pinctrl-names="default";
-	pinctrl-0=<&i2c2_master_pins2>;
-	clock-frequency = <100000>;
-};
+/*&i2c2 {
+ *	status = "okay";
+ *	pinctrl-names="default";
+ *	pinctrl-0=<&i2c2_master_pins2>;
+ *	clock-frequency = <300000>;
+ *};
+ */
 
 &i2c3 {
-	status = "okay";
+	status = "ok";
 	pinctrl-names="default";
 	pinctrl-0=<&i2c3_master_pins2>;
 	clock-frequency = <100000>; /* default 100k */
@@ -1228,28 +1268,41 @@
 		resample_module = <4>;
 		status = "okay";
 	};
-	aml_pwrdet: pwrdet {
-		compatible = "amlogic, g12a-power-detect";
 
-		interrupts = <GIC_SPI 155 IRQ_TYPE_EDGE_RISING>;
-		interrupt-names = "pwrdet_irq";
+	vad:vad {
+		compatible = "amlogic, snd-vad";
+		#sound-dai-cells = <0>;
 
-		/* pwrdet source sel
-		 * 7: loopback;
-		 * 6: tdmin_lb;
-		 * 5: reserved;
-		 * 4: pdmin;
-		 * 3: spdifin;
-		 * 2: tdmin_c;
-		 * 1: tdmin_b;
+		clocks = <&clkaudio CLKID_AUDIO_GATE_TOVAD
+			&clkc CLKID_FCLK_DIV5
+			&clkaudio CLKID_AUDIO_VAD>;
+		clock-names = "gate", "pll", "clk";
+
+		interrupts = <GIC_SPI 155 IRQ_TYPE_EDGE_RISING
+				GIC_SPI 48 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq_wakeup", "irq_frame_sync";
+
+		/*
+		 * Data src sel:
 		 * 0: tdmin_a;
+		 * 1: tdmin_b;
+		 * 2: tdmin_c;
+		 * 3: spdifin;
+		 * 4: pdmin;
+		 * 5: loopback_b;
+		 * 6: tdmin_lb;
+		 * 7: loopback_a;
 		 */
-		pwrdet_src = <4>;
+		src = <4>;
 
-		hi_th = <0x70000>;
-		lo_th = <0x16000>;
+		/*
+		 * deal with hot word in user space or kernel space
+		 * 0: in user space
+		 * 1: in kernel space
+		 */
+		level = <1>;
 
-		status = "disabled";
+		status = "okay";
 	};
 }; /* end of audiobus */
 
@@ -1594,3 +1647,14 @@
 	status = "okay";
 };
 
+&pinctrl_aobus {
+	dvb_s_ts0_pins: dvb_s_ts0_pins {
+		tsin_a {
+			groups = "tsin_a_sop_ao",
+				"tsin_a_valid_ao",
+				"tsin_a_clk_ao",
+				"tsin_a_din0_ao";
+			function = "tsin_a_ao";
+		};
+	};
+};

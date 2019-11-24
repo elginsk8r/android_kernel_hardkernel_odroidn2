@@ -33,11 +33,11 @@ enum ge2d_memtype_s {
 	AML_GE2D_MEM_INVALID,
 };
 
-
+#define MAX_PLANE         4
 #define MAX_BITBLT_WORK_CONFIG 4
 #define MAX_GE2D_CMD  32   /* 64 */
 
-/* #define CONFIG_GE2D_ADV_NUM */
+#define CONFIG_GE2D_ADV_NUM
 #define CONFIG_GE2D_SRC2
 #define GE2D_STATE_IDLE                 0
 #define GE2D_STATE_RUNNING              1
@@ -128,10 +128,17 @@ enum ge2d_memtype_s {
 #define FILTER_TYPE_GAU0_BOT    5
 #define FILTER_TYPE_GAU1    6
 
-#define MATRIX_YCC_TO_RGB               1
-#define MATRIX_RGB_TO_YCC               2
-#define MATRIX_FULL_RANGE_YCC_TO_RGB    3
-#define MATRIX_RGB_TO_FULL_RANGE_YCC    4
+#define MATRIX_YCC_TO_RGB               (1 << 0)
+#define MATRIX_RGB_TO_YCC               (1 << 1)
+#define MATRIX_FULL_RANGE_YCC_TO_RGB    (1 << 2)
+#define MATRIX_RGB_TO_FULL_RANGE_YCC    (1 << 3)
+#define MATRIX_BT_STANDARD              (1 << 4)
+#define MATRIX_BT_601                   (0 << 4)
+#define MATRIX_BT_709                   (1 << 4)
+
+#define GE2D_FORMAT_BT_STANDARD         (1 << 28)
+#define GE2D_FORMAT_BT601               (0 << 28)
+#define GE2D_FORMAT_BT709               (1 << 28)
 
 
 #define GE2D_ENDIAN_SHIFT	24
@@ -195,16 +202,16 @@ enum ge2d_memtype_s {
 #define GE2D_COLOR_MAP_VUYA8888     (3 << GE2D_COLOR_MAP_SHIFT)
 
 /*
- *format code is defined as:
- *[18] : 1-deep color mode(10/12 bit), 0-8bit mode
- *[17] : 1-YUV color space, 0-RGB color space
- *[16] : compress_range
- *[9:8]: format
- *[7:6]: 8bit_mode_sel
- *[5]  : LUT_EN
- *[4:3]: PIC_STRUCT
- *[2]  : SEP_EN
- *[1:0]: X_YC_RATIO, SRC1_Y_YC_RATIO
+ * format code is defined as:
+ * [18] : 1-deep color mode(10/12 bit), 0-8bit mode
+ * [17] : 1-YUV color space, 0-RGB color space
+ * [16] : compress_range, 1-full ramge, 0-limited range
+ * [9:8]: format
+ * [7:6]: 8bit_mode_sel
+ * [5]  : LUT_EN
+ * [4:3]: PIC_STRUCT
+ * [2]  : SEP_EN
+ * [1:0]: X_YC_RATIO, SRC1_Y_YC_RATIO
  */
 #define GE2D_FORMAT_MASK                0x0ffff
 #define GE2D_BPP_MASK                   0x00300
@@ -214,7 +221,7 @@ enum ge2d_memtype_s {
 #define GE2D_BPP_32BIT                  0x00300
 #define GE2D_FORMAT_DEEP_COLOR   0x40000
 #define GE2D_FORMAT_YUV                 0x20000
-#define GE2D_FORMAT_COMP_RANGE          0x10000
+#define GE2D_FORMAT_FULL_RANGE          0x10000
 /*bit8(2)  format   bi6(2) mode_8b_sel  bit5(1)lut_en   bit2 sep_en*/
 /*M  separate block S one block.*/
 
@@ -240,6 +247,7 @@ enum ge2d_memtype_s {
 #define GE2D_FMT_M24_YUV420B	0x2001f /* 00_00_0_11_1_11 */
 
 #define GE2D_FMT_M24_YUV420SP		0x20207
+#define GE2D_FMT_M24_YUV422SP           0x20206
 /* 01_00_0_00_1_11 nv12 &nv21, only works on m6. */
 #define GE2D_FMT_M24_YUV420SPT		0x20217
 /* 01_00_0_00_1_11 nv12 &nv21, only works on m6. */
@@ -295,6 +303,7 @@ enum ge2d_memtype_s {
 #define GE2D_FORMAT_M24_RGB         GE2D_FMT_M24_RGB
 #define GE2D_FORMAT_M24_YUV420T     GE2D_FMT_M24_YUV420T
 #define GE2D_FORMAT_M24_YUV420B     GE2D_FMT_M24_YUV420B
+#define GE2D_FORMAT_M24_YUV422SP (GE2D_FMT_M24_YUV422SP | GE2D_COLOR_MAP_NV12)
 #define GE2D_FORMAT_S16_YUV422T (GE2D_FMT_S16_YUV422T | GE2D_COLOR_MAP_YUV422)
 #define GE2D_FORMAT_S16_YUV422B (GE2D_FMT_S16_YUV422B | GE2D_COLOR_MAP_YUV422)
 #define GE2D_FORMAT_S24_YUV444T (GE2D_FMT_S24_YUV444T | GE2D_COLOR_MAP_YUV444)
@@ -546,6 +555,7 @@ struct ge2d_cmd_s {
 	/* unsigned char    src1_x_chr_phase; */
 	/* unsigned char    src1_y_chr_phase; */
 	unsigned char    src1_fill_color_en;
+	unsigned int     src1_fmt;
 
 	int              src2_x_start;
 	int              src2_y_start;
@@ -554,6 +564,7 @@ struct ge2d_cmd_s {
 	unsigned char    src2_x_rev;
 	unsigned char    src2_y_rev;
 	unsigned char    src2_fill_color_en;
+	unsigned int     src2_fmt;
 
 	int              dst_x_start;
 	int              dst_y_start;
@@ -562,6 +573,7 @@ struct ge2d_cmd_s {
 	unsigned char    dst_xy_swap;
 	unsigned char    dst_x_rev;
 	unsigned char    dst_y_rev;
+	unsigned int     dst_fmt;
 
 	int              sc_prehsc_en;
 	int              sc_prevsc_en;
@@ -604,6 +616,19 @@ struct ge2d_cmd_s {
 	unsigned char    hang_flag;
 };
 
+struct ge2d_canvas_cfg_s {
+	int canvas_used;
+	int canvas_index;
+	unsigned int stride;
+	unsigned int height;
+	unsigned long phys_addr;
+};
+
+struct ge2d_dma_cfg_s {
+	int dma_used;
+	void *dma_cfg;
+};
+
 struct ge2d_config_s {
 	struct ge2d_gen_s            gen;
 	struct ge2d_src1_data_s      src1_data;
@@ -614,12 +639,25 @@ struct ge2d_config_s {
 	unsigned int	v_scale_coef_type;
 	unsigned int	h_scale_coef_type;
 	unsigned int	update_flag;
+	struct ge2d_canvas_cfg_s src_canvas_cfg[MAX_PLANE];
+	struct ge2d_canvas_cfg_s src2_canvas_cfg[MAX_PLANE];
+	struct ge2d_canvas_cfg_s dst_canvas_cfg[MAX_PLANE];
+	struct ge2d_dma_cfg_s src_dma_cfg[MAX_PLANE];
+	struct ge2d_dma_cfg_s src2_dma_cfg[MAX_PLANE];
+	struct ge2d_dma_cfg_s dst_dma_cfg[MAX_PLANE];
 };
 
 struct ge2d_dma_buf_s {
 	dma_addr_t paddr;
 	void *vaddr;
 	int len;
+};
+
+enum ge2d_data_type_e {
+	AML_GE2D_SRC,
+	AML_GE2D_SRC2,
+	AML_GE2D_DST,
+	AML_GE2D_TYPE_INVALID,
 };
 
 enum ge2d_src_dst_e {

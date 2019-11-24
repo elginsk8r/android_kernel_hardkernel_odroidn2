@@ -356,8 +356,9 @@
 		compatible = "amlogic, g12a-eth-dwmac","snps,dwmac";
 		reg = <0xff3f0000 0x10000
 			0xff634540 0x8
-			0xff64c000 0xa0>;
-		reg-names = "eth_base", "eth_cfg", "eth_pll";
+			0xff64c000 0xa0
+			0xffd01008 0x4>;
+		reg-names = "eth_base", "eth_cfg", "eth_pll", "eth_reset";
 		interrupts = <0 8 1>;
 		interrupt-names = "macirq";
 		status = "disabled";
@@ -1122,6 +1123,12 @@
 		};
 	};
 
+	amprime_sl:amprime_sl {
+		compatible = "amlogic, prime_sl_g12";
+		dev_name = "amprime_sl";
+		status = "disabled";
+	};
+
 	galcore {
 		compatible = "amlogic, galcore";
 		dev_name = "galcore";
@@ -1133,7 +1140,15 @@
 		interrupts = <0 147 4>;
 		interrupt-names = "galcore";
 		reg = <0xff100000 0x800
-		       0xff000000 0x400000>;
+			0xff000000 0x400000
+			0xff63c10c 0x4
+			0xff63c110 0x4
+			0xffd01088 0x4
+			0xff63c1c8 0x4
+			>;
+		reg-names = "NN_REG","NN_SRAM","NN_MEM0",
+			"NN_MEM1","NN_RESET","NN_CLK";
+		nn_efuse = <0xff63003c 0x20>;
 	};
 
 	aocec: aocec {
@@ -1870,6 +1885,7 @@
 		compatible = "arm, isp";
 		reg = <0xff140000 0x00040000>;
 		reg-names = "ISP";
+		isp-efuse = <0xff630038 0x4000>;
 		interrupts = <0 142 4>;
 		interrupt-names = "ISP";
 		temper-buf-size = <24>;

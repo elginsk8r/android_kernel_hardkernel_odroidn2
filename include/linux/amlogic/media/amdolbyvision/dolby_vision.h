@@ -48,9 +48,14 @@ extern int dolby_vision_update_setting(void);
 extern bool is_dolby_vision_stb_mode(void);
 extern bool is_meson_g12(void);
 extern bool is_meson_gxm(void);
+extern bool is_meson_box(void);
 extern bool is_meson_txlx(void);
 extern bool is_meson_txlx_tvmode(void);
 extern bool is_meson_txlx_stbmode(void);
+extern bool is_meson_tm2(void);
+extern bool is_meson_tm2_tvmode(void);
+extern bool is_meson_tm2_stbmode(void);
+extern bool is_meson_tvmode(void);
 extern void tv_dolby_vision_crc_clear(int flag);
 extern char *tv_dolby_vision_get_crc(u32 *len);
 extern void tv_dolby_vision_insert_crc(bool print);
@@ -70,5 +75,5 @@ extern int enable_rgb_to_yuv_matrix_for_dvll(
 extern bool is_dovi_frame(struct vframe_s *vf);
 extern void update_graphic_width_height(unsigned int width,
 	unsigned int height);
-
+extern bool is_dovi_dual_layer_frame(struct vframe_s *vf);
 #endif

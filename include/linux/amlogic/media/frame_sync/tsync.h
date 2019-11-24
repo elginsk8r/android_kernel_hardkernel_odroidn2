@@ -157,6 +157,10 @@ extern int tsync_set_av_threshold_max(int max);
 
 extern void set_pts_realign(void);
 
+extern void timestamp_set_pcrlatency(u32 latency);
+extern u32 timestamp_get_pcrlatency(void);
+extern bool tsync_check_vpts_discontinuity(unsigned int vpts);
+
 static inline u32 tsync_vpts_discontinuity_margin(void)
 {
 	return tsync_get_av_threshold_min();

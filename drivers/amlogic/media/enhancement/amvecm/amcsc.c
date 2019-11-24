@@ -6360,15 +6360,6 @@ static void video_process(
 		pr_csc("saturation offset = %d.\n",
 			saturation_offset);
 		cur_csc_type = csc_type;
-
-		if (vf) {
-			if ((cur_csc_type == VPP_MATRIX_BT2020YUV_BT2020RGB) &&
-				(cur_csc_type != 0xffff) &&
-				(vf->source_type == VFRAME_SOURCE_TYPE_HDMI)) {
-				amvecm_wakeup_queue();
-				pr_csc("wake up hdr status queue.\n");
-			}
-		}
 	}
 }
 
@@ -6381,7 +6372,8 @@ static int vpp_matrix_update(
 	int hdmi_scs_type_changed = 0;
 	struct hdr10plus_para hdmitx_hdr10plus_param;
 
-	if (vinfo == NULL)
+	if (!vinfo || vinfo->mode == VMODE_NULL ||
+	    vinfo->mode == VMODE_INVALID)
 		return 0;
 
 	/* Tx hdr information */
@@ -6451,7 +6443,9 @@ int amvecm_matrix_process(
 	int i;
 
 	if ((get_cpu_type() < MESON_CPU_MAJOR_ID_GXTVBB) ||
-		is_meson_gxl_package_905M2() || (csc_en == 0))
+	    is_meson_gxl_package_905M2() || (csc_en == 0) ||
+	    !vinfo || vinfo->mode == VMODE_NULL ||
+	    vinfo->mode == VMODE_INVALID)
 		return 0;
 
 	if (reload_mtx) {

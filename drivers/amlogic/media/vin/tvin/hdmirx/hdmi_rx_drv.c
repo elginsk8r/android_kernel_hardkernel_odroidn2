@@ -687,7 +687,7 @@ int hdmirx_hw_get_3d_structure(void)
 
 /*
  * hdmirx_get_vsi_info - get vsi info
- * this func is used to get 3D format and dobly
+ * this func is used to get 3D format and dolby
  * vision state of current video
  */
 void hdmirx_get_vsi_info(struct tvin_sig_property_s *prop)
@@ -762,6 +762,16 @@ void hdmirx_get_repetition_info(struct tvin_sig_property_s *prop)
 {
 	prop->decimation_ratio = rx.pre.repeat |
 			HDMI_DE_REPEAT_DONE_FLAG;
+}
+
+/*
+ * hdmirx_get_allm_mode - get allm mode
+ */
+void hdmirx_get_latency_info(struct tvin_sig_property_s *prop)
+{
+	prop->latency.allm_mode = rx.vs_info_details.allm_mode;
+	prop->latency.it_content = it_content;
+	prop->latency.cn_type = rx.cur.cn_type;
 }
 
 /*
@@ -858,6 +868,7 @@ void hdmirx_get_sig_property(struct tvin_frontend_s *fe,
 	hdmirx_set_timing_info(prop);
 	hdmirx_get_hdr_info(prop);
 	hdmirx_get_vsi_info(prop);
+	hdmirx_get_latency_info(prop);
 	prop->skip_vf_num = vdin_drop_frame_cnt;
 }
 

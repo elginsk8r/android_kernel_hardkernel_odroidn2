@@ -516,7 +516,7 @@ static void rx_pktdump_vsi(void *pdata)
 	rx_pr("3d vdfmt: 0x%x\n", pktdata->sbpkt.vsi.vdfmt);
 
 	if (pktdata->length == E_DV_LENGTH_24) {
-		/*dobly version v0 pkt*/
+		/*dolby version v0 pkt*/
 
 	} else {
 		if (pktdata->sbpkt.vsi.vdfmt == 0) {
@@ -1378,7 +1378,7 @@ void rx_get_vsi_info(void)
 			rx.vs_info_details.eff_tmax_pq = tmp;
 		}
 	} else if (pkt->ieee == 0x000c03) {
-		/* dobly10 */
+		/* dolby10 */
 		if (pkt->length == E_DV_LENGTH_24) {
 			rx.vs_info_details.dolby_vision = true;
 			if ((pkt->sbpkt.payload.data[0] & 0xffff) == 0)
@@ -1391,6 +1391,10 @@ void rx_get_vsi_info(void)
 			((pkt->sbpkt.payload.data[0] & 0xff) == 0)) {
 			rx.vs_info_details.dolby_vision = false;
 		}
+	} else if (pkt->ieee == 0xd85dc4) {
+		/*TODO:hdmi2.1 spec vsi packet*/
+		tmp = pkt->sbpkt.payload.data[0] & _BIT(9);
+		rx.vs_info_details.allm_mode = tmp ? true : false;
 	} else {
 		/*3d VSI*/
 		if (pkt->sbpkt.vsi_3Dext.vdfmt == VSI_FORMAT_3D_FORMAT) {

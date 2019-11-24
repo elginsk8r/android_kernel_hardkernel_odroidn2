@@ -614,7 +614,7 @@
 		status = "okay";
 		vendor_id = <0x000000>;
 		cec_osd_string = "MBox"; /* Max Chars: 14    */
-		cec_version = <6>; /* 5: 1.4, 6: 2.0 */
+		cec_version = <5>; /* 5: 1.4, 6: 2.0 */
 		port_num = <1>;
 		arc_port_mask = <0x0>;
 		interrupts = <0 199 1>;
@@ -828,6 +828,11 @@
 			"pcm_mclk",
 			"pcm_sclk";
 		pcm_mode = <1>; /* 0=slave mode, 1=master mode */
+		dai-format = "dsp_a";
+		dai-tdm-slot-tx-mask = <1>;
+		dai-tdm-slot-rx-mask = <1>;
+		dai-tdm-slot-num = <2>;
+		dai-tdm-slot-width = <16>;
 	};
 	i2s_plat: i2s_platform {
 		compatible = "amlogic, aml-i2s";

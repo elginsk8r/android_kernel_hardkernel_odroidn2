@@ -327,7 +327,7 @@
 		cpuinfo_cmd = <0x82000044>;
 	};
 
-	aml_reboot{
+	reboot: aml_reboot{
 		compatible = "aml, reboot";
 		sys_reset = <0x84000009>;
 		sys_poweroff = <0x84000008>;
@@ -356,8 +356,9 @@
 		compatible = "amlogic, g12a-eth-dwmac","snps,dwmac";
 		reg = <0x0 0xff3f0000 0x0 0x10000
 			0x0 0xff634540 0x0 0x8
-			0x0 0xff64c000 0x0 0xa0>;
-		reg-names = "eth_base", "eth_cfg", "eth_pll";
+			0x0 0xff64c000 0x0 0xa0
+			0x0 0xffd01008 0x0 0x4>;
+		reg-names = "eth_base", "eth_cfg", "eth_pll", "eth_reset";
 		interrupts = <0 8 1>;
 		interrupt-names = "macirq";
 		status = "disabled";
@@ -1122,6 +1123,12 @@
 		};
 	};
 
+	amprime_sl: amprime_sl {
+		compatible = "amlogic, prime_sl_g12";
+		dev_name = "amprime_sl";
+		status = "disabled";
+	};
+
 	galcore {
 		compatible = "amlogic, galcore";
 		dev_name = "galcore";
@@ -1133,7 +1140,15 @@
 		interrupts = <0 147 4>;
 		interrupt-names = "galcore";
 		reg = <0x0 0xff100000 0x0 0x800
-		       0x0 0xff000000 0x0 0x400000>;
+			0x0 0xff000000 0x0 0x400000
+			0x0 0xff63c10c 0x0 0x4
+			0x0 0xff63c110 0x0 0x4
+			0x0 0xffd01088 0x0 0x4
+			0X0 0xff63c1c8 0X0 0x4
+			>;
+		reg-names = "NN_REG","NN_SRAM","NN_MEM0",
+			"NN_MEM1","NN_RESET","NN_CLK";
+		nn_efuse = <0xff63003c 0x20>;
 	};
 
 	aocec: aocec {
@@ -1279,21 +1294,6 @@
 		io_efuse_base{
 			reg = <0x0 0xff630000 0x0 0x2000>;
 		};
-	};
-
-	gdc:gdc {
-		#address-cells=<2>;
-		#size-cells=<2>;
-		status = "ok";
-		compatible = "amlogic, g12b-gdc";
-		reg = <0 0xFF950000 0 0x0000100
-			   0 0xFF63C16C 0 0x0000004
-			   0 0xFF63C100 0 0x0000004>;
-		interrupts = <0 144 1>;
-		interrupt-names = "GDC";
-		clocks = <&clkc CLKID_GDC_CORE_CLK_COMP
-				  &clkc CLKID_GDC_AXI_CLK_COMP >;
-		clock-names = "core","axi";
 	};
 
 	mesonstream {
@@ -1870,6 +1870,7 @@
 		compatible = "arm, isp";
 		reg = <0x0 0xff140000 0x0 0x00040000>;
 		reg-names = "ISP";
+		isp-efuse = <0xff630038 0x4000>;
 		interrupts = <0 142 4>;
 		interrupt-names = "ISP";
 		temper-buf-size = <24>;

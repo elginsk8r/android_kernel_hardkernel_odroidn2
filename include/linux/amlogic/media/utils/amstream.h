@@ -221,6 +221,9 @@
 #define AMSTREAM_IOC_SET_EX _IOW((_A_M), 0xc4, struct am_ioctl_parm_ex)
 #define AMSTREAM_IOC_GET_PTR _IOWR((_A_M), 0xc5, struct am_ioctl_parm_ptr)
 #define AMSTREAM_IOC_SET_PTR _IOW((_A_M), 0xc6, struct am_ioctl_parm_ptr)
+#define AMSTREAM_IOC_GET_AVINFO _IOR((_A_M), 0xc7, struct av_param_info_t)
+#define AMSTREAM_IOC_GET_QOSINFO _IOR((_A_M), 0xc8, struct av_param_qosinfo_t)
+
 
 #define TRICKMODE_NONE       0x00
 #define TRICKMODE_I          0x01
@@ -264,6 +267,7 @@ enum FRAME_BASE_VIDEO_PATH {
 	FRAME_BASE_PATH_AMVIDEO2,
 	FRAME_BASE_PATH_V4L_VIDEO,
 	FRAME_BASE_PATH_TUNNEL_MODE,
+	FRAME_BASE_PATH_V4L_OSD,
 	FRAME_BASE_PATH_MAX
 };
 
@@ -300,12 +304,20 @@ struct buf_status {
 
 #define DECODER_ERROR_MASK	(0xffff<<16)
 
+
+enum E_ASPECT_RATIO {
+	ASPECT_RATIO_4_3,
+	ASPECT_RATIO_16_9,
+	ASPECT_UNDEFINED = 255
+};
+
 struct vdec_status {
 	unsigned int width;
 	unsigned int height;
 	unsigned int fps;
 	unsigned int error_count;
 	unsigned int status;
+	enum E_ASPECT_RATIO euAspectRatio;
 };
 
 struct vdec_info {
@@ -325,6 +337,7 @@ struct vdec_info {
 	unsigned long long total_data;
 	unsigned int samp_cnt;
 	unsigned int offset;
+	unsigned int ratio_control;
 	char reserved[32];
 };
 
@@ -682,10 +695,68 @@ struct am_ioctl_parm_ptr {
 	u32 len; /*char reserved[4]; */
 };
 
-#define SUPPORT_VDEC_NUM	(20)
+struct vframe_qos_s {
+	int num;
+	int type;
+	int size;
+	int pts;
+	int max_qp;
+	int avg_qp;
+	int min_qp;
+	int max_skip;
+	int avg_skip;
+	int min_skip;
+	int max_mv;
+	int min_mv;
+	int avg_mv;
+	int decode_buffer;
+} /*vframe_qos */;
+
+enum FRAME_FORMAT {
+	FRAME_FORMAT_UNKNOWN,
+	FRAME_FORMAT_PROGRESS,
+	FRAME_FORMAT_INTERLACE,
+};
+
+#define QOS_FRAME_NUM 60
+struct av_info_t {
+	/*auido info*/
+	int sample_rate;
+	int channels;
+	int aformat_type;
+	unsigned int apts;
+	unsigned int apts_err;
+	/*video info*/
+	unsigned int width;
+	unsigned int height;
+	unsigned int dec_error_count;
+	unsigned int first_pic_coming;
+	unsigned int fps;
+	unsigned int current_fps;
+	unsigned int vpts;
+	unsigned int vpts_err;
+	unsigned int ts_error;
+	unsigned int first_vpts;
+	int vformat_type;
+	enum FRAME_FORMAT frame_format;
+	unsigned int toggle_frame_count;/*toggle frame count*/
+	unsigned int dec_err_frame_count;/*vdec error frame count*/
+	unsigned int dec_frame_count;/*vdec frame count*/
+	unsigned int dec_drop_frame_count;/*drop frame num*/
+	int tsync_mode;
+};
+
+struct av_param_info_t {
+	struct av_info_t av_info;
+};
+struct av_param_qosinfo_t {
+	struct vframe_qos_s vframe_qos[QOS_FRAME_NUM];
+};
+
+#define SUPPORT_VDEC_NUM	(64)
 int vcodec_profile_register(const struct codec_profile_t *vdec_profile);
 ssize_t vcodec_profile_read(char *buf);
-
+bool is_support_profile(char *name);
 #ifdef __KERNEL__
 #include <linux/interrupt.h>
 
