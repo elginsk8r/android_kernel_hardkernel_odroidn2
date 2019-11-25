@@ -22,6 +22,7 @@
 #include <linux/sched.h>
 #include <linux/semaphore.h>
 #include <linux/spinlock.h>
+#include <linux/clk.h>
 
 //data types and prototypes
 #include "gdc_api.h"
@@ -148,7 +149,10 @@ int gdc_process(struct gdc_cmd_s *gdc_cmd,
 	gdc_data1out_line_offset_write(o_y_line_offset);
 
 	//gdc uv output
-	gdc_out_base_addr += output_height * o_y_line_offset;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * o_y_line_offset;
+	else
+		gdc_out_base_addr = gdc_cmd->uv_out_base_addr;
 	gdc_data2out_addr_write(gdc_out_base_addr);
 	gdc_data2out_line_offset_write(o_uv_line_offset);
 
@@ -223,12 +227,18 @@ int gdc_process_yuv420p(struct gdc_cmd_s *gdc_cmd,
 	gdc_data1out_line_offset_write(output_stride);
 
 	//gdc u output
-	gdc_out_base_addr += output_height * output_stride;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_stride;
+	else
+		gdc_out_base_addr = gdc_cmd->u_out_base_addr;
 	gdc_data2out_addr_write(gdc_out_base_addr);
 	gdc_data2out_line_offset_write(output_u_stride);
 
 	//gdc v output
-	gdc_out_base_addr += output_height * output_u_stride / 2;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_u_stride / 2;
+	else
+		gdc_out_base_addr = gdc_cmd->v_out_base_addr;
 	gdc_data3out_addr_write(gdc_out_base_addr);
 	gdc_data3out_line_offset_write(output_v_stride);
 	gdc_start(gdc_cmd);
@@ -350,12 +360,18 @@ int gdc_process_yuv444p(struct gdc_cmd_s *gdc_cmd,
 	gdc_data1out_line_offset_write(output_stride);
 
 	//gdc u output
-	gdc_out_base_addr += output_height * output_stride;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_stride;
+	else
+		gdc_out_base_addr = gdc_cmd->u_out_base_addr;
 	gdc_data2out_addr_write(gdc_out_base_addr);
 	gdc_data2out_line_offset_write(output_u_stride);
 
 	//gdc v output
-	gdc_out_base_addr += output_height * output_u_stride;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_u_stride;
+	else
+		gdc_out_base_addr = gdc_cmd->v_out_base_addr;
 	gdc_data3out_addr_write(gdc_out_base_addr);
 	gdc_data3out_line_offset_write(output_v_stride);
 	gdc_start(gdc_cmd);
@@ -427,12 +443,18 @@ int gdc_process_rgb444p(struct gdc_cmd_s *gdc_cmd,
 	gdc_data1out_line_offset_write(output_stride);
 
 	//gdc u output
-	gdc_out_base_addr += output_height * output_stride;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_stride;
+	else
+		gdc_out_base_addr = gdc_cmd->u_out_base_addr;
 	gdc_data2out_addr_write(gdc_out_base_addr);
 	gdc_data2out_line_offset_write(output_u_stride);
 
 	//gdc v output
-	gdc_out_base_addr += output_height * output_u_stride;
+	if (gdc_cmd->outplane == 1)
+		gdc_out_base_addr += output_height * output_u_stride;
+	else
+		gdc_out_base_addr = gdc_cmd->v_out_base_addr;
 	gdc_data3out_addr_write(gdc_out_base_addr);
 	gdc_data3out_line_offset_write(output_v_stride);
 	gdc_start(gdc_cmd);
@@ -483,5 +505,35 @@ int gdc_get_frame(struct gdc_cmd_s *gdc_cmd)
 	//done of the current frame and stop gdc block
 	gdc_stop(gdc_cmd);
 	//spin_unlock_irqrestore(&gdev->slock, flags);
+	return 0;
+}
+
+/**
+ *   This function set the GDC power on/off
+ *
+ *   @param enable - power off/on
+ *   @return  0 - success
+ *           -1 - fail.
+ */
+int gdc_pwr_config(bool enable)
+{
+	struct meson_gdc_dev_t *gdc_dev = gdc_manager.gdc_dev;
+
+	if (gdc_dev == NULL ||
+		gdc_dev->clk_core == NULL ||
+		gdc_dev->clk_axi == NULL) {
+		gdc_log(LOG_ERR, "core/axi set err.\n");
+		return -1;
+	}
+
+	/* clk */
+	if (enable) {
+		clk_prepare_enable(gdc_dev->clk_core);
+		clk_prepare_enable(gdc_dev->clk_axi);
+	} else {
+		clk_disable_unprepare(gdc_dev->clk_core);
+		clk_disable_unprepare(gdc_dev->clk_axi);
+	}
+
 	return 0;
 }

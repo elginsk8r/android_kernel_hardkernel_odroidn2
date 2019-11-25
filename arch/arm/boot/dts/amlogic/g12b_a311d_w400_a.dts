@@ -116,6 +116,11 @@
 			size = <0x02800000>;
 			alignment = <0x400000>;
 		};
+		/*  POST PROCESS MANAGER */
+		ppmgr_reserved:linux,ppmgr {
+			compatible = "shared-dma-pool";
+			size = <0x0>;
+		};
 		codec_mm_cma:linux,codec_mm_cma {
 			compatible = "shared-dma-pool";
 			reusable;
@@ -153,6 +158,20 @@
 			size = <0x1000000>;
 			alignment = <0x400000>;
 			linux,contiguous-region;
+		};
+		isp_cma_reserved:linux,isp_cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			status = "okay";
+			size = <0x6800000>;
+			alignment = <0x400000>;
+		};
+		adapt_cma_reserved:linux,adapt_cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			status = "okay";
+			size = <0x01800000>;
+			alignment = <0x400000>;
 		};
 	};
 
@@ -259,6 +278,13 @@
 		compatible = "amlogic, picdec";
 		memory-region = <&picdec_cma_reserved>;
 		dev_name = "picdec";
+		status = "okay";
+	};
+
+	ppmgr {
+		compatible = "amlogic, ppmgr";
+		memory-region = <&ppmgr_reserved>;
+		dev_name = "ppmgr";
 		status = "okay";
 	};
 
@@ -644,46 +670,38 @@
 		opp-shared;
 
 		opp00 {
-			opp-hz = /bits/ 64 <100000000>;
-			opp-microvolt = <731000>;
-		};
-		opp01 {
-			opp-hz = /bits/ 64 <250000000>;
-			opp-microvolt = <731000>;
-		};
-		opp02 {
 			opp-hz = /bits/ 64 <500000000>;
 			opp-microvolt = <731000>;
 		};
-		opp03 {
+		opp01 {
 			opp-hz = /bits/ 64 <667000000>;
 			opp-microvolt = <731000>;
 		};
-		opp04 {
+		opp02 {
 			opp-hz = /bits/ 64 <1000000000>;
 			opp-microvolt = <731000>;
 		};
-		opp05 {
+		opp03 {
 			opp-hz = /bits/ 64 <1200000000>;
 			opp-microvolt = <731000>;
 		};
-		opp06 {
+		opp04 {
 			opp-hz = /bits/ 64 <1398000000>;
 			opp-microvolt = <761000>;
 		};
-		opp07 {
+		opp05 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <791000>;
 		};
-		opp08 {
+		opp06 {
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <831000>;
 		};
-		opp09 {
+		opp07 {
 			opp-hz = /bits/ 64 <1704000000>;
 			opp-microvolt = <861000>;
 		};
-		opp10 {
+		opp08 {
 			opp-hz = /bits/ 64 <1800000000>;
 			opp-microvolt = <981000>;
 		};
@@ -694,42 +712,34 @@
 		opp-shared;
 
 		opp00 {
-			opp-hz = /bits/ 64 <100000000>;
-			opp-microvolt = <751000>;
-		};
-		opp01 {
-			opp-hz = /bits/ 64 <250000000>;
-			opp-microvolt = <751000>;
-		};
-		opp02 {
 			opp-hz = /bits/ 64 <500000000>;
 			opp-microvolt = <751000>;
 		};
-		opp03 {
+		opp01 {
 			opp-hz = /bits/ 64 <667000000>;
 			opp-microvolt = <751000>;
 		};
-		opp04 {
+		opp02 {
 			opp-hz = /bits/ 64 <1000000000>;
 			opp-microvolt = <771000>;
 		};
-		opp05 {
+		opp03 {
 			opp-hz = /bits/ 64 <1200000000>;
 			opp-microvolt = <771000>;
 		};
-		opp06 {
+		opp04 {
 			opp-hz = /bits/ 64 <1398000000>;
 			opp-microvolt = <791000>;
 		};
-		opp07 {
+		opp05 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <821000>;
 		};
-		opp08 {
+		opp06 {
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <861000>;
 		};
-		opp09 {
+		opp07 {
 			opp-hz = /bits/ 64 <1704000000>;
 			opp-microvolt = <891000>;
 		};
@@ -740,8 +750,51 @@
 		status = "okay";
 	};
 
+	sensor: sensor {
+		compatible = "soc, sensor";
+		status = "okay";
+		sensor-name = "imx290"; /*imx290;os08a10;imx227*/
+		pinctrl-names="default";
+		pinctrl-0=<&clk12_24_z_pins>;
+		clocks = <&clkc CLKID_24M>;
+		clock-names = "g12a_24m";
+		reset = <&gpio GPIOZ_12 GPIO_ACTIVE_HIGH>;
+		ir_cut_gpio = <&gpio GPIOZ_11 GPIO_ACTIVE_HIGH
+				&gpio GPIOZ_7 GPIO_ACTIVE_HIGH>;
+	};
 
+	iq: iq {
+		compatible = "soc, iq";
+		status = "okay";
+		sensor-name = "imx290"; /*imx290;os08a10;imx227*/
+	};
 }; /* end of / */
+
+&i2c2 {
+	status = "okay";
+	pinctrl-names="default";
+	pinctrl-0=<&i2c2_master_pins2>;
+	clock-frequency = <100000>; /* default 100k */
+	sensor-i2c@6c {
+		compatible = "arm, i2c-sensor";
+		reg = <0x6c>;
+		reg-names = "i2c-sensor";
+		slave-addr = <0x6c>;
+		reg-type = <2>;
+		reg-data-type = <1>;
+		link-device = <&phycsi>;
+	};
+};
+
+&isp {
+	status = "okay";
+	memory-region = <&isp_cma_reserved>;
+};
+
+&adapter {
+	status = "okay";
+	memory-region = <&adapt_cma_reserved>;
+};
 
 &meson_fb {
 	status = "okay";
@@ -1139,6 +1192,13 @@
 		};
 	};
 
+	clk12_24_z_pins:clk12_24_z_pins {
+		mux {
+			groups = "clk12_24_z";
+			function = "clk12_24_ee";
+			drive-strength = <3>;
+		};
+	};
 }; /* end of pinctrl_periphs */
 
 &pinctrl_aobus {
@@ -1327,8 +1387,10 @@
 };
 &ethmac {
 	status = "okay";
+/*	//conflict with isp i2c
 	pinctrl-names = "internal_eth_pins";
 	pinctrl-0 = <&internal_eth_pins>;
+*/
 	mc_val = <0x4be04>;
 
 	internal_phy=<1>;

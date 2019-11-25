@@ -75,6 +75,16 @@
 #endif
 #endif
 
+#define IS_VDIN_SRC(src) ( \
+	(src == VFRAME_SOURCE_TYPE_TUNER) || \
+	(src == VFRAME_SOURCE_TYPE_CVBS) || \
+	(src == VFRAME_SOURCE_TYPE_COMP) || \
+	(src == VFRAME_SOURCE_TYPE_HDMI))
+
+#define IS_I_SRC(vftype) (vftype & VIDTYPE_INTERLACE_BOTTOM)
+
+#define IS_COMP_MODE(vftype) (vftype & VIDTYPE_COMPRESS)
+
 enum process_fun_index_e {
 	PROCESS_FUN_NULL = 0,
 	PROCESS_FUN_DI,
@@ -117,6 +127,8 @@ struct di_buf_s {
 	int cnt_canvas_idx;
 	unsigned long mcinfo_adr;
 	int mcinfo_canvas_idx;
+	unsigned short *mcinfo_vaddr;
+	bool bflg_vmap;
 	unsigned long mcvec_adr;
 	int mcvec_canvas_idx;
 	struct mcinfo_pre_s {
@@ -149,6 +161,7 @@ struct di_buf_s {
 	 */
 	atomic_t di_cnt;
 	struct page	*pages;
+	u32 width_bk;
 };
 #define RDMA_DET3D_IRQ				0x20
 /* vdin0 rdma irq */
@@ -206,6 +219,7 @@ extern bool is_vsync_rdma_enable(void);
 #define DI_VPU_CLKB_SET 0x8
 
 #define TABLE_LEN_MAX 10000
+#define TABLE_FLG_END	(0xfffffffe)
 
 struct di_dev_s {
 	dev_t			   devt;
@@ -235,6 +249,7 @@ struct di_dev_s {
 	unsigned int       post_wr_support;
 	unsigned int nrds_enable;
 	unsigned int pps_enable;
+	u32 h_sc_down_en;/*sm1, tm2 ...*/
 	/*struct	mutex      cma_mutex;*/
 	unsigned int	   flag_cma;
 	struct page			*total_pages;
@@ -287,6 +302,7 @@ struct di_pre_stru_s {
 	int	reg_req_flag;
 	int	reg_req_flag_irq;
 	int	reg_req_flag_cnt;
+	int	reg_irq_busy;
 	int	force_unreg_req_flag;
 	int	disable_req_flag;
 	/* current source info */
@@ -329,7 +345,7 @@ struct di_pre_stru_s {
 	unsigned int det_tp;
 	unsigned int det_la;
 	unsigned int det_null;
-	unsigned int width_bk;
+	/*unsigned int width_bk;*/
 #ifdef DET3D
 	int	vframe_interleave_flag;
 #endif
@@ -355,6 +371,8 @@ struct di_pre_stru_s {
 	unsigned long irq_time[2];
 	/* combing adaptive */
 	struct combing_status_s *mtn_status;
+	u64 afbc_rls_time;
+	bool wait_afbc;
 };
 
 struct di_post_stru_s {
@@ -401,6 +419,16 @@ struct di_buf_pool_s {
 	struct di_buf_s *di_buf_ptr;
 	unsigned int size;
 };
+struct di_mm_s {
+	struct page	*ppage;
+	unsigned long	addr;
+};
+extern bool di_mm_alloc(int cma_mode, size_t count, struct di_mm_s *o);
+extern bool di_mm_release(int cma_mode,
+			struct page *pages,
+			int count,
+			unsigned long addr);
+
 
 unsigned char is_bypass(vframe_t *vf_in);
 
@@ -420,6 +448,11 @@ int get_di_video_peek_cnt(void);
 unsigned long get_di_reg_unreg_timeout_cnt(void);
 struct vframe_s **get_di_vframe_in(void);
 
+extern s32 di_request_afbc_hw(u8 id, bool on);
+u32 di_requeset_afbc(u32 onoff);
+/***********************/
+extern bool di_wr_cue_int(void);
+extern int reg_cue_int_show(struct seq_file *seq, void *v);
 
 /*---------------------*/
 

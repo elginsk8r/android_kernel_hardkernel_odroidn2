@@ -35,6 +35,8 @@
 #include <linux/uaccess.h>
 #include <linux/extcon.h>
 #include <linux/cdev.h>
+#include <linux/poll.h>
+#include <linux/workqueue.h>
 
 /* Amlogic Headers */
 #include <linux/amlogic/media/vout/vout_notify.h>
@@ -58,7 +60,7 @@ static int early_resume_flag;
 #define VMODE_NAME_LEN_MAX    64
 static struct class *vout_class;
 static DEFINE_MUTEX(vout_serve_mutex);
-static char vout_mode_uboot[VMODE_NAME_LEN_MAX] __nosavedata;
+static char vout_mode_uboot[VMODE_NAME_LEN_MAX] = "null";
 static char vout_mode[VMODE_NAME_LEN_MAX] __nosavedata;
 static char local_name[VMODE_NAME_LEN_MAX] = {0};
 static u32 vout_init_vmode = VMODE_INIT_NULL;
@@ -78,6 +80,8 @@ static char cvbsmode[VMODE_NAME_LEN_MAX] = {
 static enum vmode_e last_vmode = VMODE_MAX;
 static int tvout_monitor_flag = 1;
 static unsigned int tvout_monitor_timeout_cnt = 20;
+/* 500ms: 1*HZ/2 */
+static unsigned int tvout_monitor_interval = 500;
 
 static struct delayed_work tvout_mode_work;
 
@@ -225,6 +229,15 @@ char *get_vout_mode_uboot(void)
 }
 EXPORT_SYMBOL(get_vout_mode_uboot);
 
+static inline void vout_setmode_wakeup_queue(void)
+{
+	if (tvout_monitor_flag)
+		return;
+
+	if (vout_cdev)
+		wake_up(&vout_cdev->setmode_queue);
+}
+
 int set_vout_mode(char *name)
 {
 	enum vmode_e mode;
@@ -259,6 +272,7 @@ int set_vout_mode(char *name)
 	vout_notifier_call_chain(VOUT_EVENT_MODE_CHANGE, &mode);
 
 	extcon_set_state_sync(vout_excton_setmode, EXTCON_TYPE_DISP, 0);
+	vout_setmode_wakeup_queue();
 
 	return ret;
 }
@@ -694,6 +708,17 @@ static long vout_compat_ioctl(struct file *file, unsigned int cmd,
 }
 #endif
 
+static unsigned int vout_poll(struct file *file, poll_table *wait)
+{
+	struct vout_cdev_s *vcdev = file->private_data;
+	unsigned int mask = 0;
+
+	poll_wait(file, &vcdev->setmode_queue, wait);
+	mask = (POLLIN | POLLRDNORM);
+
+	return mask;
+}
+
 static const struct file_operations vout_fops = {
 	.owner          = THIS_MODULE,
 	.open           = vout_io_open,
@@ -702,6 +727,7 @@ static const struct file_operations vout_fops = {
 #ifdef CONFIG_COMPAT
 	.compat_ioctl   = vout_compat_ioctl,
 #endif
+	.poll = vout_poll,
 };
 
 static int vout_fops_create(void)
@@ -735,6 +761,8 @@ static int vout_fops_create(void)
 		VOUTERR("failed to create vout device: %d\n", ret);
 		goto vout_fops_err3;
 	}
+
+	init_waitqueue_head(&vout_cdev->setmode_queue);
 
 	VOUTPR("%s OK\n", __func__);
 	return 0;
@@ -937,7 +965,8 @@ static void aml_tvout_mode_work(struct work_struct *work)
 	mutex_unlock(&vout_serve_mutex);
 
 	if (tvout_monitor_flag)
-		schedule_delayed_work(&tvout_mode_work, 1*HZ/2);
+		schedule_delayed_work(&tvout_mode_work,
+			msecs_to_jiffies(tvout_monitor_interval));
 	else
 		VOUTPR("%s: monitor stop\n", __func__);
 }
@@ -959,7 +988,8 @@ static void aml_tvout_mode_monitor(void)
 	refresh_tvout_mode();
 	mutex_unlock(&vout_serve_mutex);
 
-	schedule_delayed_work(&tvout_mode_work, 1*HZ/2);
+	schedule_delayed_work(&tvout_mode_work,
+		msecs_to_jiffies(tvout_monitor_interval));
 }
 
 static void aml_vout_extcon_register(struct platform_device *pdev)
@@ -991,6 +1021,24 @@ static void aml_vout_extcon_free(void)
 	vout_excton_setmode = NULL;
 }
 
+static void aml_vout_get_dt_info(struct platform_device *pdev)
+{
+	int ret;
+	unsigned int para[2];
+
+	/* e.g. dts: tvout_monitor = <100 250>
+	 * interval = 100(ms), timeout_cnt = 250
+	 */
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+			"tvout_monitor", para, 2);
+	if (!ret) {
+		tvout_monitor_interval = para[0];
+		tvout_monitor_timeout_cnt = para[1];
+	}
+	VOUTPR("tvout monitor interval:%d(ms), timeout cnt:%d\n",
+		tvout_monitor_interval, tvout_monitor_timeout_cnt);
+}
+
 /*****************************************************************
  **
  **	vout driver interface
@@ -1012,9 +1060,9 @@ static int aml_vout_probe(struct platform_device *pdev)
 	ret = vout_fops_create();
 
 	vout_register_server(&nulldisp_vout_server);
-	set_vout_init_mode();
-
 	aml_vout_extcon_register(pdev);
+	aml_vout_get_dt_info(pdev);
+	set_vout_init_mode();
 	aml_tvout_mode_monitor();
 
 	VOUTPR("%s OK\n", __func__);
@@ -1139,9 +1187,6 @@ static int __init get_vout_init_mode(char *str)
 	char *option;
 	int count = 3;
 	char find = 0;
-
-	/* init void vout_mode_uboot name */
-	memset(vout_mode_uboot, 0, sizeof(vout_mode_uboot));
 
 	if (str == NULL)
 		return -EINVAL;

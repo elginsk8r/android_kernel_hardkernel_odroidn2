@@ -329,7 +329,9 @@ int vf_ppmgr_get_states(struct vframe_states *states)
 static int get_input_format(struct vframe_s *vf)
 {
 	int format = GE2D_FORMAT_M24_YUV420;
+	int interlace_mode;
 
+	interlace_mode = vf->type & VIDTYPE_TYPEMASK;
 	if (vf->type & VIDTYPE_VIU_422) {
 #if 0
 		if (vf->type & VIDTYPE_INTERLACE_BOTTOM)
@@ -346,9 +348,9 @@ static int get_input_format(struct vframe_s *vf)
 			format = GE2D_FORMAT_S16_YUV422;
 
 #else
-		if (vf->type & VIDTYPE_INTERLACE_BOTTOM) {
+		if (interlace_mode == VIDTYPE_INTERLACE_BOTTOM) {
 			format = GE2D_FORMAT_S16_YUV422;
-		} else if (vf->type & VIDTYPE_INTERLACE_TOP) {
+		} else if (interlace_mode == VIDTYPE_INTERLACE_TOP) {
 			format = GE2D_FORMAT_S16_YUV422;
 		} else {
 			format = GE2D_FORMAT_S16_YUV422
@@ -357,18 +359,17 @@ static int get_input_format(struct vframe_s *vf)
 #endif
 
 	} else if (vf->type & VIDTYPE_VIU_NV21) {
-		if (vf->type & VIDTYPE_INTERLACE_BOTTOM)
+		if (vf->type & VIDTYPE_INTERLACE_BOTTOM) {
 			format =
 					GE2D_FORMAT_M24_NV21 |
 					(GE2D_FORMAT_M24_NV21B & (3 << 3));
-
-		else if (vf->type & VIDTYPE_INTERLACE_TOP)
+		} else if (vf->type & VIDTYPE_INTERLACE_TOP) {
 			format =
 				GE2D_FORMAT_M24_NV21
 				| (GE2D_FORMAT_M24_NV21T & (3 << 3));
-
-		else
+		} else {
 			format = GE2D_FORMAT_M24_NV21;
+		}
 	} else {
 		if (vf->type & VIDTYPE_INTERLACE_BOTTOM) {
 			format = GE2D_FORMAT_M24_YUV420
@@ -2976,6 +2977,10 @@ static int ppmgr_task(void *data)
 			if (vf->source_type !=
 				VFRAME_SOURCE_TYPE_OTHERS)
 				goto SKIP_DETECT;
+			if ((vf->width * vf->height)
+				>= (3840 * 2160)) {          //4k do not detect
+				goto SKIP_DETECT;
+			}
 			if (first_frame) {
 				last_type = vf->type & VIDTYPE_TYPEMASK;
 				last_width = vf->width;
@@ -3248,7 +3253,7 @@ SKIP_DETECT:
 			vf_local_init();
 			vf_light_unreg_provider(&ppmgr_vf_prov);
 			msleep(30);
-			vf_reg_provider(&ppmgr_vf_prov);
+			vf_light_reg_provider(&ppmgr_vf_prov);
 			ppmgr_blocking = false;
 			up(&thread_sem);
 			PPMGRVPP_WARN("ppmgr rebuild from light-unregister\n");
@@ -3627,7 +3632,8 @@ void stop_ppmgr_task(void)
 static int tb_buffer_init(void)
 {
 	int i;
-	int flags = CODEC_MM_FLAGS_DMA_CPU | CODEC_MM_FLAGS_CMA_CLEAR;
+	//int flags = CODEC_MM_FLAGS_DMA_CPU | CODEC_MM_FLAGS_CMA_CLEAR;
+	int flags = 0;
 
 	if (tb_buffer_status)
 		return tb_buffer_status;
@@ -3676,7 +3682,8 @@ static int tb_buffer_init(void)
 			detect_buf[i].paddr = tb_buffer_start +
 				TB_DETECT_H * TB_DETECT_W * i;
 			detect_buf[i].vaddr =
-				(ulong)phys_to_virt(detect_buf[i].paddr);
+				(ulong)codec_mm_vmap(detect_buf[i].paddr,
+				TB_DETECT_H * TB_DETECT_W);
 			if (ppmgr_device.tb_detect & 0xc) {
 				PPMGRVPP_INFO(
 					"detect buff(%d) paddr: %lx, vaddr: %lx\n",
@@ -3692,6 +3699,7 @@ static int tb_buffer_init(void)
 
 static int tb_buffer_uninit(void)
 {
+	int i;
 	if (tb_src_canvas) {
 		if (tb_src_canvas & 0xff)
 			canvas_pool_map_free_canvas(
@@ -3712,6 +3720,13 @@ static int tb_buffer_uninit(void)
 		PPMGRVPP_INFO("tb cma free addr is %x, size is %x\n",
 			(unsigned int)tb_buffer_start,
 			(unsigned int)tb_buffer_size);
+		for (i = 0; i < tb_buffer_len; i++) {
+			if (detect_buf[i].vaddr) {
+				codec_mm_unmap_phyaddr(
+					(u8 *)detect_buf[i].vaddr);
+				detect_buf[i].vaddr = 0;
+			}
+		}
 		codec_mm_free_for_dma(
 			"tb_detect",
 			tb_buffer_start);

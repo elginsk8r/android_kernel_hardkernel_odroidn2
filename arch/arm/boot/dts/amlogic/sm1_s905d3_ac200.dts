@@ -587,15 +587,15 @@
 			tdmacpu: cpu {
 				sound-dai = <&tdma>;
 				dai-tdm-slot-tx-mask =
-							<1 1 1 1 1 1 1 1>;
+							<1>;
 				dai-tdm-slot-rx-mask =
-							<1 1 1 1 1 1 1 1>;
-				dai-tdm-slot-num = <8>;
-				dai-tdm-slot-width = <32>;
-				system-clock-frequency = <24576000>;
+							<1>;
+				dai-tdm-slot-num = <2>;
+				dai-tdm-slot-width = <16>;
+				system-clock-frequency = <256000>;
 			};
 			tdmacodec: codec {
-				sound-dai = <&dummy_codec &dummy_codec>;
+				sound-dai = <&dummy_codec>;
 			};
 		};
 
@@ -820,7 +820,7 @@
 			cooling_devices {
 				cpufreq_cool_cluster0 {
 					min_state = <1000000>;
-					dyn_coeff = <115>;
+					dyn_coeff = <125>;
 					cluster_id = <0>;
 					node_name = "cpufreq_cool0";
 					device_type = "cpufreq";
@@ -834,7 +834,7 @@
 				};
 				gpufreq_cool {
 					min_state = <400>;
-					dyn_coeff = <358>;
+					dyn_coeff = <215>;
 					gpu_pp = <2>;
 					cluster_id = <0>;
 					node_name = "gpufreq_cool0";
@@ -867,7 +867,7 @@
 		soc_thermal: soc_thermal {
 			polling-delay = <1000>;
 			polling-delay-passive = <100>;
-			sustainable-power = <1460>;
+			sustainable-power = <1410>;
 			thermal-sensors = <&p_tsensor 0>;
 			trips {
 				pswitch_on: trip-point@0 {
@@ -918,7 +918,7 @@
 		ddr_thermal: ddr_thermal {
 			polling-delay = <2000>;
 			polling-delay-passive = <1000>;
-			sustainable-power = <1460>;
+			sustainable-power = <1410>;
 			thermal-sensors = <&d_tsensor 1>;
 			trips {
 				dswitch_on: trip-point@0 {
@@ -980,7 +980,7 @@
 			opp-microvolt = <790000>;
 		};
 		opp07 {
-			opp-hz = /bits/ 64 <1512000000>;
+			opp-hz = /bits/ 64 <1500000000>;
 			opp-microvolt = <800000>;
 		};
 		opp08 {
@@ -1085,7 +1085,7 @@
 		compatible = "amlogic, sm1-snd-tdma";
 		#sound-dai-cells = <0>;
 		dai-tdm-lane-slot-mask-in = <0 1>;
-		dai-tdm-oe-lane-slot-mask-out = <1 0>;
+		dai-tdm-lane-slot-mask-out = <1 0>;
 		dai-tdm-clk-sel = <0>;
 		clocks = <&clkaudio CLKID_AUDIO_MCLK_A
 				&clkc CLKID_MPLL0>;
@@ -1244,6 +1244,42 @@
 		 */
 		resample_module = <4>;
 		status = "disabled";
+	};
+
+	vad:vad {
+		compatible = "amlogic, snd-vad";
+		#sound-dai-cells = <0>;
+
+		clocks = <&clkaudio CLKID_AUDIO_GATE_TOVAD
+			&clkc CLKID_FCLK_DIV5
+			&clkaudio CLKID_AUDIO_VAD>;
+		clock-names = "gate", "pll", "clk";
+
+		interrupts = <GIC_SPI 155 IRQ_TYPE_EDGE_RISING
+				GIC_SPI 48 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq_wakeup", "irq_frame_sync";
+
+		/*
+		 * Data src sel:
+		 * 0: tdmin_a;
+		 * 1: tdmin_b;
+		 * 2: tdmin_c;
+		 * 3: spdifin;
+		 * 4: pdmin;
+		 * 5: loopback_b;
+		 * 6: tdmin_lb;
+		 * 7: loopback_a;
+		 */
+		src = <4>;
+
+		/*
+		 * deal with hot word in user space or kernel space
+		 * 0: in user space
+		 * 1: in kernel space
+		 */
+		level = <1>;
+
+		status = "okay";
 	};
 }; /* end of audiobus */
 

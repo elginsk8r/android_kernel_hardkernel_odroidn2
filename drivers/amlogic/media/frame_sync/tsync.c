@@ -803,6 +803,7 @@ void tsync_avevent_locked(enum avevent_e event, u32 param)
 	case VIDEO_STOP:
 		tsync_stat = TSYNC_STAT_PCRSCR_SETUP_NONE;
 		timestamp_vpts_set(0);
+		timestamp_pcrscr_set(0);
 		timestamp_pcrscr_enable(0);
 		timestamp_firstvpts_set(0);
 		tsync_video_started = 0;
@@ -1211,13 +1212,14 @@ int tsync_set_apts(unsigned int pts)
 	else
 		t = timestamp_pcrscr_get();
 	if (tsdemux_pcrscr_valid_cb && tsdemux_pcrscr_valid_cb() == 1) {
-		pr_info("tsync_set_apts %x,diff %d\n",
-			pts, (int)timestamp_pcrscr_get() - pts);
 		timestamp_apts_set(pts);
-		if ((int)(timestamp_apts_get() - t) > 30 * TIME_UNIT90K / 1000
-				|| (int)(t - timestamp_apts_get()) >
-				80 * TIME_UNIT90K / 1000)
+		if ((int)(timestamp_apts_get() - timestamp_pcrscr_get())
+			> 30 * TIME_UNIT90K / 1000
+			|| (int)(timestamp_pcrscr_get() - timestamp_apts_get())
+			> 80 * TIME_UNIT90K / 1000) {
 			timestamp_pcrscr_set(pts);
+			set_pts_realign();
+		}
 		return 0;
 	}
 	/* do not switch tsync mode until first video toggled. */
@@ -1236,7 +1238,7 @@ int tsync_set_apts(unsigned int pts)
 		t = timestamp_pcrscr_get();
 
 	if (tsync_mode == TSYNC_MODE_AMASTER) {
-		/* special used for Dobly Certification AVSync test */
+		/* special used for Dolby Certification AVSync test */
 		if (dobly_avsync_test) {
 			if (get_vsync_pts_inc_mode()
 				&&
@@ -1429,6 +1431,28 @@ int tsync_set_startsync_mode(int mode)
 	return startsync_mode = mode;
 }
 EXPORT_SYMBOL(tsync_set_startsync_mode);
+
+bool tsync_check_vpts_discontinuity(unsigned int vpts)
+{
+	unsigned int systemtime;
+
+	if (tsync_get_mode() != TSYNC_MODE_PCRMASTER)
+		return false;
+	if (tsync_pcr_demux_pcr_used() == 0)
+		systemtime = timestamp_pcrscr_get();
+	else
+		systemtime = timestamp_pcrscr_get()
+			+ timestamp_get_pcrlatency();
+	if (vpts > systemtime &&
+		(vpts - systemtime) > tsync_vpts_discontinuity_margin())
+		return true;
+	else if (systemtime > vpts &&
+		(systemtime - vpts) > tsync_vpts_discontinuity_margin())
+		return true;
+	else
+		return false;
+}
+EXPORT_SYMBOL(tsync_check_vpts_discontinuity);
 
 static ssize_t store_pcr_recover(struct class *class,
 		struct class_attribute *attr,
@@ -1998,12 +2022,33 @@ static ssize_t show_startsync_mode(struct class *class,
 	return sprintf(buf, "0x%x\n", tsync_get_startsync_mode());
 }
 
+static ssize_t show_latency(struct class *class,
+		struct class_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", timestamp_get_pcrlatency());
+}
+
+static ssize_t store_latency(struct class *class,
+	struct class_attribute *attr,
+	const char *buf, size_t size)
+{
+	unsigned int latency = 0;
+	ssize_t r;
+
+	r = kstrtoint(buf, 0, &latency);
+	if (r != 0)
+		return -EINVAL;
+	timestamp_set_pcrlatency(latency);
+	return size;
+}
 
 static ssize_t show_apts_lookup(struct class *class,
 	struct class_attribute *attrr, char *buf)
 {
+	u32 frame_size;
 	unsigned int  pts = 0xffffffff;
-	pts_lookup_offset(PTS_TYPE_AUDIO, apts_lookup_offset, &pts, 300);
+	pts_lookup_offset(PTS_TYPE_AUDIO, apts_lookup_offset,
+		&pts, &frame_size, 300);
 	return sprintf(buf, "0x%x\n", pts);
 }
 
@@ -2085,6 +2130,7 @@ static struct class_attribute tsync_class_attrs[] = {
 	NULL),
 	__ATTR(checkin_firstapts, 0644, show_checkin_firstapts,
 	NULL),
+	__ATTR(pts_latency, 0664, show_latency, store_latency),
 	__ATTR_NULL
 };
 

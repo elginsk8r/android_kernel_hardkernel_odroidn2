@@ -27,7 +27,7 @@
 #include <linux/pinctrl/consumer.h>
 
 /* HDMITX driver version */
-#define HDMITX_VER "20181019"
+#define HDMITX_VER "20190624"
 
 /* chip type */
 #define MESON_CPU_ID_M8B		0
@@ -302,7 +302,7 @@ struct hdmitx_dev {
 	struct delayed_work work_hpd_plugin;
 	struct delayed_work work_hpd_plugout;
 	struct delayed_work work_rxsense;
-	struct work_struct work_internal_intr;
+	struct delayed_work work_internal_intr;
 	struct work_struct work_hdr;
 	struct delayed_work work_do_hdcp;
 #ifdef CONFIG_AML_HDMI_TX_14
@@ -542,7 +542,8 @@ struct hdmitx_dev {
 #define MISC_HDCP_CLKDIS	(CMD_MISC_OFFSET + 0x0e)
 #define MISC_TMDS_RXSENSE	(CMD_MISC_OFFSET + 0x0f)
 #define MISC_I2C_REACTIVE       (CMD_MISC_OFFSET + 0x10)
-#define MISC_READ_AVMUTE_OP     (CMD_MISC_OFFSET + 0x11)
+#define MISC_I2C_RESET		(CMD_MISC_OFFSET + 0x11)
+#define MISC_READ_AVMUTE_OP     (CMD_MISC_OFFSET + 0x12)
 
 /***********************************************************************
  *                          Get State //GetState

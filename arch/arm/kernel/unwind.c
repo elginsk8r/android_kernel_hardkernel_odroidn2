@@ -407,7 +407,13 @@ int unwind_frame(struct stackframe *frame)
 
 	idx = unwind_find_idx(frame->pc);
 	if (!idx) {
+	#ifdef CONFIG_AMLOGIC_KASAN32
+		/* avoid FUCKING close source ko print too many here */
+		if (frame->pc > PAGE_OFFSET)
+			pr_warn("unwind: Index not found %08lx\n", frame->pc);
+	#else
 		pr_warn("unwind: Index not found %08lx\n", frame->pc);
+	#endif
 		return -URC_FAILURE;
 	}
 
@@ -538,7 +544,7 @@ void unwind_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 				sp_irq = (unsigned long)irq_stack[cpu];
 				addr = *((unsigned long *)(sp_irq +
 					THREAD_INFO_OFFSET - 8 -
-					sizeof(addr)));
+					sizeof(addr) - 12));
 				pt_regs = (struct pt_regs *)addr;
 				frame.fp = pt_regs->ARM_fp;
 				frame.sp = pt_regs->ARM_sp;
