@@ -112,13 +112,6 @@ static int video_pause_global = 1;
 
 static u32 cur_omx_index;
 
-#ifdef CONFIG_GE2D_KEEP_FRAME
-/* #if MESON_CPU_TYPE >= MESON_CPU_TYPE_MESON6 */
-/* #include <mach/mod_gate.h> */
-/* #endif */
-/* #include "mach/meson-secure.h" */
-#endif
-
 #if 1
 /*TODO for logo*/
 struct platform_resource_s {
@@ -8198,9 +8191,9 @@ SET_FILTER:
 			if (cur_frame_par->sr0_position)
 				vpp_misc_set |=
 					PREBLD_SR0_VD1_SCALER;
-			else
+			else /* SR0_AFTER_DNLP */
 				vpp_misc_set &=
-					~SR0_AFTER_DNLP;
+					~PREBLD_SR0_VD1_SCALER;
 		else
 			vpp_misc_set |=
 				PREBLD_SR0_VD1_SCALER;
@@ -8211,9 +8204,9 @@ SET_FILTER:
 			if (cur_frame_par->sr1_position)
 				vpp_misc_set |=
 					DNLP_SR1_CM;
-			else
+			else /* SR1_AFTER_POSTBLEN */
 				vpp_misc_set &=
-					~SR1_AFTER_POSTBLEN;
+					~DNLP_SR1_CM;
 		else
 			vpp_misc_set |=
 				DNLP_SR1_CM;
@@ -8666,27 +8659,13 @@ static void video_vf_unreg_provider(void)
 		try_free_keep_video(1);
 	}
 
-#ifdef CONFIG_GE2D_KEEP_FRAME
-	if (cur_dispbuf) {
-		/* TODO: mod gate */
-		/* switch_mod_gate_by_name("ge2d", 1); */
-		keeped = vf_keep_current(cur_dispbuf, el_vf);
-		/* TODO: mod gate */
-		/* switch_mod_gate_by_name("ge2d", 0); */
-	}
-	if ((hdmi_in_onvideo == 0) && (video_start_post)) {
-		tsync_avevent(VIDEO_STOP, 0);
-		video_start_post = false;
-	}
-#else
-	/* if (!trickmode_fffb) */
 	if (cur_dispbuf)
 		keeped = vf_keep_current(cur_dispbuf, el_vf);
 	if ((hdmi_in_onvideo == 0) && (video_start_post)) {
 		tsync_avevent(VIDEO_STOP, 0);
 		video_start_post = false;
 	}
-#endif
+
 	if (keeped < 0) {/*keep failed.*/
 		pr_info("video keep failed, disable video now!\n");
 		safe_disble_videolayer();
@@ -9304,7 +9283,9 @@ static void set_omx_pts(u32 *p)
 	} else if (set_from_hwc == 0 && !omx_run) {
 		struct vframe_s *vf = NULL;
 		u32 donot_drop = 0;
+#ifdef CONFIG_AMLOGIC_MEDIA_ENHANCEMENT_DOLBYVISION
 		u32 dovi_dual_layer = 0;
+#endif
 
 		while (try_cnt--) {
 			vf = vf_peek(RECEIVER_NAME);
@@ -13254,10 +13235,15 @@ static int __init video_early_init(void)
 		WRITE_VCBUS_REG_BITS(
 			SRSHARP0_SHARP_SYNC_CTRL, 1, 0, 1);
 		WRITE_VCBUS_REG_BITS(
+			SRSHARP0_SHARP_SYNC_CTRL, 1, 8, 1);
+		WRITE_VCBUS_REG_BITS(
 			SRSHARP1_SHARP_SYNC_CTRL, 1, 8, 1);
-	} else if (cpu_after_eq(MESON_CPU_MAJOR_ID_G12B))
+	} else if (cpu_after_eq(MESON_CPU_MAJOR_ID_G12B)) {
 		WRITE_VCBUS_REG_BITS(
 			SRSHARP0_SHARP_SYNC_CTRL, 1, 0, 1);
+		WRITE_VCBUS_REG_BITS(
+			SRSHARP0_SHARP_SYNC_CTRL, 1, 8, 1);
+	}
 	return 0;
 }
 

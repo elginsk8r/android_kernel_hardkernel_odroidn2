@@ -135,6 +135,27 @@
 			size = <0x0 0x04000000>;
 			alignment = <0x0 0x400000>;
 		};
+		galcore_reserved:linux,galcore {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x1000000>;
+			alignment = <0x400000>;
+			linux,contiguous-region;
+		};
+		isp_cma_reserved:linux,isp_cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			status = "okay";
+			size = <0x06800000>;
+			alignment = <0x400000>;
+		};
+		adapt_cma_reserved:linux,adapt_cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			status = "okay";
+			size = <0x01800000>;
+			alignment = <0x400000>;
+		};
 	};
 
 	cvbsout {
@@ -171,6 +192,24 @@
 			0x1c59  0xfc48
 			0xffff  0x0>; /* ending flag */
 		vdac_config = <0xa000>;
+	};
+
+	bt-dev {
+		compatible = "amlogic, bt-dev";
+		dev_name = "bt-dev";
+		status = "disabled";
+		gpio_reset = <&gpio    GPIOX_17    GPIO_ACTIVE_HIGH>;
+		gpio_hostwake = <&gpio    GPIOX_19    GPIO_ACTIVE_HIGH>;
+	};
+
+	wifi {
+		compatible = "amlogic,aml_wifi";
+		dev_name = "aml_wifi";
+		status = "disabled";
+		interrupt_pin = <&gpio    GPIOX_7    GPIO_ACTIVE_LOW>;
+		irq_trigger_type = "GPIO_IRQ_HIGH";
+		power_on_pin = <&gpio    GPIOX_6    GPIO_ACTIVE_HIGH>;
+		dhd_static_buf; //if use bcm wifi, config dhd_static_buf
 	};
 
 	deinterlace {
@@ -506,6 +545,24 @@
 		vol_switch_18 = <1>;
 		f_min = <400000>;
 		f_max = <200000000>;
+	};
+};
+
+&sd_emmc_a {
+	status = "okay";
+	sdio {
+		caps = "MMC_CAP_4_BIT_DATA",
+			 "MMC_CAP_MMC_HIGHSPEED",
+			 "MMC_CAP_SD_HIGHSPEED",
+			 "MMC_CAP_NONREMOVABLE",
+			 "MMC_CAP_UHS_SDR12",
+			 "MMC_CAP_UHS_SDR25",
+			 "MMC_CAP_UHS_SDR50",
+			 "MMC_CAP_UHS_SDR104",
+			 "MMC_PM_KEEP_POWER",
+			 "MMC_CAP_SDIO_IRQ";
+		f_min = <400000>;
+		f_max = <60000000>;
 	};
 };
 
