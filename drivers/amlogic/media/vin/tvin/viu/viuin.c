@@ -412,7 +412,7 @@ static void viuin_sig_property(struct tvin_frontend_s *fe,
 	case TVIN_PORT_VIU2_WB0_VPP:
 	case TVIN_PORT_VIU2_WB1_VPP:
 		vinfo = get_current_vinfo();
-		prop->color_format = vinfo->viu_color_fmt;
+		prop->color_format = (enum tvin_color_fmt_e)vinfo->viu_color_fmt;
 		break;
 
 	default:
