@@ -23,6 +23,10 @@
 #include <linux/reset.h>
 #include <linux/gpio.h>
 #include <linux/dma-mapping.h>
+ #include <linux/delay.h>
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#include <linux/pinctrl/consumer.h>
+#endif
 
 /*
  * The Meson SPICC controller could support DMA based transfers, but is not
@@ -36,6 +40,12 @@
  *   "Data Valid" signal than a Chip Select, GPIO link should be used instead
  *   to have a CS go down over the full transfer
  */
+
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+static unsigned int force64b;
+module_param(force64b, uint, 0000);
+MODULE_PARM_DESC(force64b, "force 64bits fb data");
+#endif
 
 /* Register Map */
 #define SPICC_RXDATA	0x00
@@ -214,6 +224,9 @@ struct meson_spicc_device {
 	unsigned long			rxb_remain;
 	unsigned long			xfer_remain;
 	bool				using_dma;
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	struct pinctrl			*pinctrl;
+#endif
 #ifdef MESON_SPICC_TEST_ENTRY
 	struct				class cls;
 	u8				test_data;
@@ -471,11 +484,9 @@ static inline void meson_spicc_tx(struct meson_spicc_device *spicc)
 
 static void meson_spicc_setup_pio_burst(struct meson_spicc_device *spicc)
 {
-	unsigned int burst_len;
-
-	burst_len = min_t(unsigned int,
-			  spicc->xfer_remain / spicc->bytes_per_word,
-			  spicc->data->fifo_size);
+	unsigned int burst_len = min_t(unsigned int,
+		  spicc->xfer_remain / spicc->bytes_per_word,
+		  spicc->data->fifo_size);
 
 	/* Setup Xfer variables */
 	spicc->tx_remain = burst_len;
@@ -581,6 +592,21 @@ static int meson_spicc_transfer_one(struct spi_master *master,
 	spicc->rx_buf = (u8 *)xfer->rx_buf;
 	spicc->xfer_remain = xfer->len;
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	if (force64b &&
+	    (xfer->len >= 64) &&
+	    (xfer->bits_per_word == 8) &&
+	    ((xfer->len % 8) == 0)) {
+		int cnt = xfer->len / 8;
+		int i;
+
+		u64 *tx_buf = (u64 *) &spicc->tx_buf[0];
+		for (i = 0; i < cnt; i++)
+			tx_buf[i] = __swab64p((__u64 *) &spicc->tx_buf[i * 8]);
+
+		xfer->bits_per_word = 64;
+	}
+#endif
 	/* Pre-calculate word size */
 	spicc->bytes_per_word =
 	   DIV_ROUND_UP(spicc->xfer->bits_per_word, 8);
@@ -1041,6 +1067,9 @@ static int meson_spicc_probe(struct platform_device *pdev)
 	spicc = spi_master_get_devdata(master);
 	spicc->master = master;
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	spicc->pinctrl = NULL;
+#endif
 	spicc->pdev = pdev;
 	platform_set_drvdata(pdev, spicc);
 
@@ -1075,6 +1104,16 @@ static int meson_spicc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "clock registration failed\n");
 		goto out_master;
 	}
+
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	spicc->pinctrl = devm_pinctrl_get_select(&pdev->dev, "default");
+	if (IS_ERR(spicc->pinctrl)) {
+		spicc->pinctrl = NULL;
+		dev_err(&pdev->dev, "spi pinmux : can't get spicc_pins\n");
+	}
+	if (force64b)
+		dev_info(&pdev->dev, "force64b flag is true\n");
+#endif
 
 	device_reset_optional(&pdev->dev);
 
@@ -1112,6 +1151,18 @@ static int meson_spicc_remove(struct platform_device *pdev)
 {
 	struct meson_spicc_device *spicc = platform_get_drvdata(pdev);
 
+#ifdef MESON_SPICC_TEST_ENTRY
+	class_unregister(&spicc->cls);
+#endif /* end MESON_SPICC_TEST_ENTRY */
+
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	if (spicc->pinctrl)
+		devm_pinctrl_put(spicc->pinctrl);
+
+	spicc->pinctrl = devm_pinctrl_get_select(&pdev->dev, "gpio_periphs");
+	devm_pinctrl_put(spicc->pinctrl);
+	spicc->pinctrl = NULL;
+#endif
 	/* Disable SPI */
 	writel(0, spicc->base + SPICC_CONREG);
 

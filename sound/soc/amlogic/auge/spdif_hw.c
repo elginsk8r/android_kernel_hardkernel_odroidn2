@@ -23,6 +23,12 @@
 
 #include <linux/amlogic/media/sound/aout_notify.h>
 
+#ifdef CONFIG_ARCH_MESON64_ODROID_COMMON
+#include <linux/platform_data/board_odroid.h>
+#else
+#define board_is_odroidn2()	(0)
+#endif
+
 /*#define G12A_PTM*/
 /*#define __PTM_SPDIF_INTERNAL_LB__*/
 
@@ -663,12 +669,15 @@ void spdifout_play_with_zerodata(unsigned int spdif_id, bool reenable)
 
 		/* spdif clk */
 		//spdifout_clk_ctrl(spdif_id, true);
+
+		if (!board_is_odroidn2()) {
 		/* spdif to hdmitx */
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
-		/* ODROID spdif_b only to hdmitx */
-		if (spdif_id == 1)
-#endif
-		spdifout_to_hdmitx_ctrl(spdif_id);
+			spdifout_to_hdmitx_ctrl(spdif_id);
+		} else {
+			/* ODROID-N2 spdif_b only to hdmitx */
+			if (spdif_id == 1)
+			spdifout_to_hdmitx_ctrl(spdif_id);
+		}
 
 		/* spdif ctrl */
 		spdifout_fifo_ctrl(spdif_id,
@@ -698,3 +707,28 @@ void spdifout_play_with_zerodata_free(unsigned int spdif_id)
 	/* free frddr, then frddr in mngr */
 	frddr_deinit_without_mngr(spdif_id);
 }
+
+void aml_spdif_out_reset(unsigned int spdif_id, int offset)
+{
+	unsigned int reg = 0, val = 0;
+
+	if ((offset != 0) && (offset != 1)) {
+		pr_err("%s(), invalid offset = %d\n", __func__, offset);
+		return;
+	}
+
+	if (spdif_id == 0) {
+		reg = EE_AUDIO_SW_RESET0(offset);
+		val = REG_BIT_RESET_SPDIFOUTA;
+	} else if (spdif_id == 1) {
+		reg = EE_AUDIO_SW_RESET0(offset);
+		val = REG_BIT_RESET_SPDIFOUTB;
+	} else {
+		pr_err("invalid spdif id %d\n", spdif_id);
+		return;
+	}
+
+	audiobus_update_bits(reg, val, val);
+	audiobus_update_bits(reg, val, 0);
+}
+

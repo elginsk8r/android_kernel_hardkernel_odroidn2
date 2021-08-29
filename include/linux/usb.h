@@ -4,6 +4,10 @@
 #include <linux/mod_devicetable.h>
 #include <linux/usb/ch9.h>
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#include <linux/platform_data/board_odroid.h>
+#endif
+
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 
@@ -336,11 +340,11 @@ struct usb_host_bos {
 };
 
 int __usb_get_extra_descriptor(char *buffer, unsigned size,
-	unsigned char type, void **ptr);
+	unsigned char type, void **ptr, size_t min);
 #define usb_get_extra_descriptor(ifpoint, type, ptr) \
 				__usb_get_extra_descriptor((ifpoint)->extra, \
 				(ifpoint)->extralen, \
-				type, (void **)ptr)
+				type, (void **)ptr, sizeof(**(ptr)))
 
 /* ----------------------------------------------------------------------- */
 

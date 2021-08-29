@@ -15,6 +15,8 @@
  *
  */
 
+#include <include/dt-bindings/thermal/thermal.h>
+
 /{
 	aliases {
 		serial0 = &uart_AO;
@@ -22,10 +24,10 @@
 		serial2 = &uart_B;
 		serial3 = &uart_C;
 		serial4 = &uart_AO_B;
-		i2c0 = &i2c0;
-		i2c1 = &i2c1;
-		i2c2 = &i2c2;
-		i2c3 = &i2c3;
+		i2c0 = &i2c2;
+		i2c1 = &i2c3;
+		i2c2 = &i2c0;
+		i2c3 = &i2c1;
 		i2c4 = &i2c_AO;
 		tsensor0 = &p_tsensor;
 		tsensor1 = &d_tsensor;
@@ -252,6 +254,40 @@
 		pwm-gpios = <&gpio_ao GPIOAO_10 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
+
+	pwmfan:pwm-fan {
+		compatible = "pwm-fan";
+		pwms = <&pwmgpio 0 40000 PWM_POLARITY_INVERTED>;
+		cooling-min-state = <0>;
+		cooling-max-state = <3>;
+		#cooling-cells = <2>;
+		cooling-levels = <0 120 170 220>;
+	};
+};
+
+&soc_thermal {
+	trips {
+		fan_0: trip-point@4 {
+			temperature = <65000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+		fan_1: trip-point@5 {
+			temperature = <75000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+	cooling-maps {
+		fan_cooling_map0 {
+			trip = <&fan_0>;
+			cooling-device = <&pwmfan THERMAL_NO_LIMIT 2>;
+		};
+		fan_cooling_map1 {
+			trip = <&fan_1>;
+			cooling-device = <&pwmfan 2 THERMAL_NO_LIMIT>;
+		};
+	};
 };
 
 &ethmac {
@@ -292,28 +328,15 @@
 	tv_bit_mode = <1>;
 };
 
-&pwm_cd {
-	status = "okay";
-	pinctrl-names = "pwm_pins","gpio_periphs";
-	pinctrl-0 = <&pwm_c_pins2 &pwm_d_pins2>;
-	pinctrl-1 = <&pwmcd_to_gpios>;
-};
-
-&pwm_ef {
-	status = "okay";
-	pinctrl-names = "pwm_pins","gpio_periphs";
-	pinctrl-0 = <&pwm_e_pins &pwm_f_pins1>;
-	pinctrl-1 = <&pwmef_to_gpios>;
-};
-
 &pwm_AO_cd {
 	status = "okay";
 };
 
 &i2c3 {
 	status = "okay";
-	pinctrl-names = "default";
+	pinctrl-names = "default","gpio_periphs";
 	pinctrl-0 = <&i2c3_master_pins2>;
+	pinctrl-1 = <&i2c3_to_gpioa>;
 	clock-frequency = <100000>;		/* default 100k */
 
 	pcf8563: rtc@51 {
@@ -527,8 +550,24 @@
 			drive-strength = <2>;
 		};
 	};
+	i2c2_to_gpiox:i2c2_gpiox {
+		mux {
+			groups = "GPIOX_17",
+				"GPIOX_18";
+			function = "gpio_periphs";
+			drive-strength = <3>;
+		};
+	};
 	i2c3_master_pins2:i2c3_pins2 {
 		mux {
+			drive-strength = <3>;
+		};
+	};
+	i2c3_to_gpioa:i2c3_gpioa {
+		mux {
+			groups = "GPIOA_14",
+				"GPIOA_15";
+			function = "gpio_periphs";
 			drive-strength = <3>;
 		};
 	};
@@ -538,13 +577,24 @@
 			function = "spdif_out";
 		};
 	};
-	pwmcd_to_gpios:pwmcd_gpio {
+	spicc0_to_gpiox: spicc0_gpiox {
+		mux {
+			groups = "GPIOX_8",
+				 "GPIOX_9",
+				 //"GPIOX_10",
+				 "GPIOX_11";
+			function = "gpio_periphs";
+		};
+	};
+
+	pwmcd_to_gpios: pwmcd_gpio {
 		mux {
 			groups = "GPIOX_5", "GPIOX_6";
 			function = "gpio_periphs";
 		};
 	};
-	pwmef_to_gpios:pwmef_gpio {
+
+	pwmef_to_gpios: pwmef_gpio {
 		mux {
 			groups = "GPIOX_16", "GPIOX_7";
 			function = "gpio_periphs";

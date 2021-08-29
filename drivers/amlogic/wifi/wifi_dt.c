@@ -214,6 +214,7 @@ static void usb_power_control(int is_power, int shift)
 		if (!usb_power) {
 			set_wifi_power(is_power);
 			WIFI_INFO("Set %s power on !\n", (shift ? "WiFi":"BT"));
+			sdio_notify(1);
 			sdio_reinit();
 		}
 		usb_power |= (1 << shift);
@@ -223,6 +224,7 @@ static void usb_power_control(int is_power, int shift)
 		if (!usb_power) {
 			set_wifi_power(is_power);
 			WIFI_INFO("Set %s power down\n", (shift ? "WiFi":"BT"));
+			sdio_notify(0);
 		}
 	}
 	mutex_unlock(&wifi_bt_mutex);
@@ -667,7 +669,12 @@ static int wifi_dev_probe(struct platform_device *pdev)
 			plat->power_on_pin2 = desc_to_gpio(desc);
 		}
 
-		if (get_cpu_type() >= MESON_CPU_MAJOR_ID_GXTVBB) {
+		if (get_cpu_type() == MESON_CPU_MAJOR_ID_SM1) {
+			WIFI_INFO("set pwm as 32k output");
+			ret = pwm_single_channel_conf(plat);
+			if (ret)
+				pr_err("pwm config err\n");
+		} else if (get_cpu_type() >= MESON_CPU_MAJOR_ID_GXTVBB) {
 			ret = pwm_double_channel_conf_dt(plat);
 			if (ret != 0) {
 				WIFI_INFO("pwm_double_channel_conf_dt error\n");

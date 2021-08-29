@@ -1,0 +1,30 @@
+# Overlays for the Odroid platform
+
+dtbo-$(CONFIG_ARCH_MESON64_ODROIDC4) += spi0.dtbo	\
+					i2c0.dtbo		\
+					i2c1.dtbo		\
+					uart0.dtbo		\
+					uart1.dtbo		\
+					uart2.dtbo		\
+					uart3.dtbo		\
+					hktft32.dtbo		\
+					hktft35.dtbo		\
+					ads7846.dtbo		\
+					sx865x-i2c1.dtbo	\
+					pcf8563.dtbo		\
+					onewire.dtbo		\
+					can0.dtbo		\
+					pwm_ab.dtbo		\
+					pwm_cd.dtbo		\
+					pwm_ef.dtbo		\
+					pwm_a-pwmfan.dtbo	\
+					pwm_b-backlight.dtbo	\
+					wifi_bt_combo.dtbo	\
+					sdio.dtbo		\
+					gpio_shortcut.dtbo	\
+					esp8089.dtbo	\
+					fanspeed-full.dtbo	\
+					otg_host_mode.dtbo
+
+targets	+= $(dtbo-y)
+always	:= $(dtbo-y)
