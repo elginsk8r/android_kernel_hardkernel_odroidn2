@@ -86,7 +86,6 @@ dtb-y += gxm_q201_2g.dtb
 dtb-y += gxm_skt.dtb
 dtb-y += hertz_3g.dtb
 dtb-y += kvim3.dtb
-dtb-y += kvim3l.dtb
 dtb-y += kvim.dtb
 dtb-y += sm1_pxp.dtb
 dtb-y += sm1_s905d3_ac200_buildroot.dtb
